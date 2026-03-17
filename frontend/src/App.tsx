@@ -1,17 +1,22 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Embed from './pages/Embed';
+import Admin from './pages/Admin';
 
 function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
-          Galal Academy Membership System
-        </h1>
-        <p className="mt-4 text-zinc-400">
-          Frontend initialized successfully.
-        </p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        {/* The Embeddable Widget for Wix */}
+        <Route path="/embed" element={<Embed />} />
+        
+        {/* The Admin Dashboard */}
+        <Route path="/admin" element={<Admin />} />
+        
+        {/* Redirect root to admin or embed by default */}
+        <Route path="/" element={<Navigate to="/embed" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

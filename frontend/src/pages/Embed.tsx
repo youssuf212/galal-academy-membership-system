@@ -7,7 +7,7 @@ export default function Embed() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    youtubeHandle: ''
+    youtubeName: ''
   });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -18,15 +18,15 @@ export default function Embed() {
     setErrorMessage('');
 
     try {
-      // 1. First, search if this youtube handle exists in the members table
+      // 1. First, search if this youtube name exists in the members table
       const { data: member, error: memberError } = await supabase
         .from('members')
         .select('*')
-        .eq('youtube_handle', formData.youtubeHandle)
+        .ilike('name', formData.youtubeName)
         .single();
 
       if (memberError || !member) {
-        throw new Error("We couldn't find an active membership for this YouTube handle. Make sure you typed it exactly as it appears on YouTube, and that you are an active member.");
+        throw new Error("We couldn't find an active membership for this YouTube Name. Make sure you typed it exactly as it appears on YouTube, and that you are an active member.");
       }
 
       // 2. Insert into verifications table
@@ -36,7 +36,7 @@ export default function Embed() {
           {
             member_id: member.id,
             email: formData.email,
-            youtube_handle: formData.youtubeHandle,
+            youtube_handle: member.youtube_handle, // Use the real handle from the db
             status: 'verified',
             verified_at: new Date().toISOString()
           }
@@ -113,20 +113,17 @@ export default function Embed() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-1">YouTube Handle</label>
-            <div className="relative">
-              <span className="absolute left-4 top-3 text-zinc-500">@</span>
-              <input
-                type="text"
-                required
-                value={formData.youtubeHandle}
-                onChange={(e) => setFormData(prev => ({ ...prev, youtubeHandle: e.target.value.replace('@', '') }))}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-8 pr-4 py-3 outline-none focus:border-red-500 transition-colors"
-                placeholder="yourchannel123"
-              />
-            </div>
+            <label className="block text-sm font-medium text-zinc-400 mb-1">YouTube Profile Name</label>
+            <input
+              type="text"
+              required
+              value={formData.youtubeName}
+              onChange={(e) => setFormData(prev => ({ ...prev, youtubeName: e.target.value }))}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 outline-none focus:border-red-500 transition-colors"
+              placeholder="e.g. Hamed Y"
+            />
             <p className="text-xs text-zinc-500 mt-1">
-              The handle you used to purchase the membership.
+              The exact name you use on your YouTube profile.
             </p>
           </div>
 

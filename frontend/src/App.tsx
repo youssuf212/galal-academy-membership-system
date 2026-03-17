@@ -1,4 +1,4 @@
-import React from 'react';
+// (removed React import)
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Embed from './pages/Embed';
 import Admin from './pages/Admin';

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import { LogOut, UploadCloud, Users, CheckCircle2, AlertCircle } from 'lucide-react';
+import { LogOut, UploadCloud, Users, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Admin() {
@@ -74,13 +74,15 @@ export default function Admin() {
           
           setUploadMessage(`Processing ${results.data.length} records...`);
 
-          const processedMembers = results.data.map((row: any) => ({
-             // We'll try to find common YouTube CSV header names, but may need adjustment
-             name: row['Member'] || row['Name'] || row['Profile Name'] || 'Unknown',
-             youtube_handle: row['Channel URL'] ? row['Channel URL'].split('/').pop() : 'Unknown',
-             tier: row['Level'] || row['Tier'] || 'Standard',
-             status: row['Status'] === 'Active' ? 'active' : 'inactive', // Replace with whatever youtube sends
-          })).filter(m => m.youtube_handle !== 'Unknown');
+          const processedMembers = results.data.map((row: any) => {
+             const link = row['Link to profile'] || '';
+             return {
+               name: row['Member']?.trim() || 'Unknown',
+               youtube_handle: link ? link.split('/').pop() : 'Unknown',
+               tier: row['Current level'] || 'Standard',
+               status: 'active',
+             };
+          }).filter(m => m.name !== 'Unknown' && m.youtube_handle !== 'Unknown');
 
           // Upsert data to supabase
           const { error } = await supabase

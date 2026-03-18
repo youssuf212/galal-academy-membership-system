@@ -54,7 +54,9 @@ serve(async (req) => {
   }
 
   try {
-    const { type, email, name, tier } = await req.json()
+    const rawBody = await req.text()
+    console.log('[Dispatch Email] Received POST Payload:', rawBody)
+    const { type, email, name, tier } = JSON.parse(rawBody)
 
     let subject = ''
     let html = ''

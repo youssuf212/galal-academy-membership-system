@@ -118,13 +118,21 @@ export default function Admin() {
                     member_id: match.id,
                     verified_at: new Date().toISOString()
                   }).eq('id', req.id);
-                  console.log(`Email triggered: Welcome ${match.name}!`); // Placeholder for Resend edge function
+                  
+                  // Trigger email
+                  supabase.functions.invoke('dispatch-email', {
+                    body: { type: 'welcome', email: req.email, name: match.name, tier: match.tier }
+                  }).catch(console.error);
                 } else {
                   // Mark as rejected since they aren't in the new CSV either
                   await supabase.from('verifications').update({ 
                     status: 'rejected' 
                   }).eq('id', req.id);
-                  console.log(`Email triggered: Rejection for ${req.email}`); // Placeholder
+                  
+                  // Trigger email
+                  supabase.functions.invoke('dispatch-email', {
+                    body: { type: 'rejected', email: req.email, name: req.youtube_handle }
+                  }).catch(console.error);
                 }
               }
             }

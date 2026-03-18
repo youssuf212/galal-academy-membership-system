@@ -46,7 +46,10 @@ export default function Embed() {
         setMemberTier(member.tier);
         setStatus('success_verified');
         
-        // Note: Edge Function will handle actual email logic
+        // Trigger edge function
+        supabase.functions.invoke('dispatch-email', {
+          body: { type: 'welcome', email: formData.email, name: member.name, tier: member.tier }
+        }).catch(console.error);
       } else {
         // NO MATCH FOUND - Insert as Pending
         const { error: verificationError } = await supabase
@@ -62,6 +65,11 @@ export default function Embed() {
         }
         
         setStatus('success_pending');
+
+        // Trigger edge function
+        supabase.functions.invoke('dispatch-email', {
+          body: { type: 'pending', email: formData.email, name: formData.youtubeName }
+        }).catch(console.error);
       }
       
     } catch (err: any) {

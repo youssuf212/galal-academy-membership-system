@@ -119,9 +119,20 @@ export default function Admin() {
                     verified_at: new Date().toISOString()
                   }).eq('id', req.id);
                   
+                  const joinDateObj = new Date(match.joined_at || Date.now());
+                  const renewalDateObj = new Date(match.joined_at || Date.now());
+                  renewalDateObj.setMonth(renewalDateObj.getMonth() + 1);
+
                   // Trigger email
                   supabase.functions.invoke('dispatch-email', {
-                    body: { type: 'welcome', email: req.email, name: match.name, tier: match.tier }
+                    body: { 
+                      type: 'welcome', 
+                      email: req.email, 
+                      name: match.name, 
+                      tier: match.tier,
+                      join_date: joinDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                      renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                    }
                   }).catch(console.error);
                 } else {
                   // Mark as rejected since they aren't in the new CSV either

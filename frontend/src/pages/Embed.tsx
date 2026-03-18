@@ -46,9 +46,20 @@ export default function Embed() {
         setMemberTier(member.tier);
         setStatus('success_verified');
         
+        const joinDateObj = new Date(member.joined_at || Date.now());
+        const renewalDateObj = new Date(member.joined_at || Date.now());
+        renewalDateObj.setMonth(renewalDateObj.getMonth() + 1);
+
         // Trigger edge function
         supabase.functions.invoke('dispatch-email', {
-          body: { type: 'welcome', email: formData.email, name: member.name, tier: member.tier }
+          body: { 
+            type: 'welcome', 
+            email: formData.email, 
+            name: member.name, 
+            tier: member.tier,
+            join_date: joinDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+          }
         }).catch(console.error);
       } else {
         // NO MATCH FOUND - Insert as Pending

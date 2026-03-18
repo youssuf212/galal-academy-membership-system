@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import { LogOut, UploadCloud, Users, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { LogOut, UploadCloud, CheckCircle2, AlertCircle, Loader2, Clock, Mail } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Admin() {
@@ -13,13 +13,15 @@ export default function Admin() {
 
   // Dashboard state
   const [members, setMembers] = useState<any[]>([]);
+  const [verifications, setVerifications] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'rejected'>('pending');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) fetchMembers();
+      if (session) fetchDashboardData();
       setLoading(false);
     });
 
@@ -27,21 +29,27 @@ export default function Admin() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchMembers();
+      if (session) fetchDashboardData();
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchMembers = async () => {
-    const { data, error } = await supabase
-      .from('members')
-      .select('*')
+  const fetchDashboardData = async () => {
+    // Fetch all synced members
+    const { data: membersData } = await supabase.from('members').select('*');
+    if (membersData) setMembers(membersData);
+
+    // Fetch all form verifications
+    const { data: verificationsData } = await supabase
+      .from('verifications')
+      .select(`
+        *,
+        members (*)
+      `)
       .order('created_at', { ascending: false });
-    
-    if (!error && data) {
-      setMembers(data);
-    }
+      
+    if (verificationsData) setVerifications(verificationsData);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -68,10 +76,6 @@ export default function Admin() {
       skipEmptyLines: true,
       complete: async (results) => {
         try {
-          // Process the CSV data into our database schema
-          // Assuming the YouTube CSV has something like 'Member', 'Member since', 'Tier'
-          // We will map headers loosely, adjust these based on the exact YouTube CSV output.
-          
           setUploadMessage(`Processing ${results.data.length} records...`);
 
           const processedMembers = results.data.map((row: any) => {
@@ -85,15 +89,50 @@ export default function Admin() {
           }).filter(m => m.name !== 'Unknown' && m.youtube_handle !== 'Unknown');
 
           // Upsert data to supabase
-          const { error } = await supabase
+          const { error: upsertError } = await supabase
             .from('members')
             .upsert(processedMembers, { onConflict: 'youtube_handle' });
 
-          if (error) throw error;
+          if (upsertError) throw upsertError;
+          setUploadMessage('Members synced. Checking pending requests...');
+
+          // Fetch fresh members
+          const { data: freshMembers } = await supabase.from('members').select('*');
+          
+          if (freshMembers) {
+            // Find all pending verifications
+            const { data: pending } = await supabase
+              .from('verifications')
+              .select('*')
+              .eq('status', 'pending');
+
+            if (pending && pending.length > 0) {
+              for (const req of pending) {
+                // req.youtube_handle stores their submitted YouTube Name right now
+                const match = freshMembers.find(m => m.name.toLowerCase() === req.youtube_handle.toLowerCase());
+                
+                if (match) {
+                  // Mark as verified
+                  await supabase.from('verifications').update({ 
+                    status: 'verified', 
+                    member_id: match.id,
+                    verified_at: new Date().toISOString()
+                  }).eq('id', req.id);
+                  console.log(`Email triggered: Welcome ${match.name}!`); // Placeholder for Resend edge function
+                } else {
+                  // Mark as rejected since they aren't in the new CSV either
+                  await supabase.from('verifications').update({ 
+                    status: 'rejected' 
+                  }).eq('id', req.id);
+                  console.log(`Email triggered: Rejection for ${req.email}`); // Placeholder
+                }
+              }
+            }
+          }
 
           setUploadStatus('success');
-          setUploadMessage('Successfully synced members database!');
-          fetchMembers(); // refresh table
+          setUploadMessage('Successfully synced members and swept pending requests!');
+          fetchDashboardData();
 
         } catch (err: any) {
           console.error(err);
@@ -155,10 +194,15 @@ export default function Admin() {
               Sign In
             </button>
           </form>
+          <div className="mt-6 text-center text-sm text-zinc-500">
+            For support contact <a href="mailto:agytmembers@gmail.com" className="text-blue-500 hover:underline">agytmembers@gmail.com</a>
+          </div>
         </div>
       </div>
     );
   }
+
+  const filteredVerifications = verifications.filter(v => v.status === activeTab);
 
   // --- DASHBOARD VIEW ---
   return (
@@ -190,6 +234,9 @@ export default function Admin() {
                 <UploadCloud className="w-5 h-5" />
                 Sync YouTube CSV
               </h2>
+              <p className="text-xs text-zinc-400 mb-4">
+                Uploading a fresh CSV will automatically approve matches from the Pending Queue and reject non-matches.
+              </p>
               
               <div
                 {...getRootProps()}
@@ -220,55 +267,87 @@ export default function Admin() {
                 </div>
               )}
             </div>
+            
+            <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 mt-4 text-center">
+              <p className="text-sm text-zinc-500">
+                Support: <a href="mailto:agytmembers@gmail.com" className="text-blue-500 hover:underline">agytmembers@gmail.com</a>
+              </p>
+              <p className="text-xs mt-2 text-zinc-600">Total Members Synced: {members.length}</p>
+            </div>
           </div>
 
-          {/* Members Table */}
+          {/* Verification Table */}
           <div className="lg:col-span-2">
              <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-[600px]">
-                <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Member Database ({members.length})
-                  </h2>
-                  <button onClick={fetchMembers} className="text-sm text-blue-400 hover:text-blue-300">
-                    Refresh
-                  </button>
+                <div className="border-b border-zinc-800">
+                  <div className="flex gap-4 px-6 pt-4">
+                    <button 
+                      onClick={() => setActiveTab('pending')}
+                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'pending' ? "border-yellow-500 text-yellow-500" : "border-transparent text-zinc-400 hover:text-white")}
+                    >
+                      <Clock className="w-4 h-4" />
+                      Pending Requests ({verifications.filter(v => v.status === 'pending').length})
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('verified')}
+                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'verified' ? "border-green-500 text-green-500" : "border-transparent text-zinc-400 hover:text-white")}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Verified Access ({verifications.filter(v => v.status === 'verified').length})
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('rejected')}
+                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'rejected' ? "border-red-500 text-red-500" : "border-transparent text-zinc-400 hover:text-white")}
+                    >
+                      <AlertCircle className="w-4 h-4" />
+                      Rejected
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="flex-1 overflow-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className="bg-zinc-950/50 sticky top-0 border-b border-zinc-800">
+                    <thead className="bg-zinc-950/50 sticky top-0 shadow-sm">
                       <tr>
-                        <th className="px-6 py-4 font-medium text-zinc-400">Name</th>
-                        <th className="px-6 py-4 font-medium text-zinc-400">YouTube Handle</th>
-                        <th className="px-6 py-4 font-medium text-zinc-400">Tier</th>
-                        <th className="px-6 py-4 font-medium text-zinc-400">Status</th>
+                        <th className="px-6 py-4 font-medium text-zinc-400">Email</th>
+                        <th className="px-6 py-4 font-medium text-zinc-400">YouTube Name</th>
+                        <th className="px-6 py-4 font-medium text-zinc-400">Date Submitted</th>
+                        {activeTab === 'verified' && <th className="px-6 py-4 font-medium text-zinc-400">Tier</th>}
+                        <th className="px-6 py-4 font-medium text-zinc-400">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800">
-                      {members.length === 0 ? (
+                      {filteredVerifications.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-6 py-8 text-center text-zinc-500">
-                            No members found. Upload a CSV to sync.
+                          <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 flex flex-col items-center">
+                            No {activeTab} requests found.
                           </td>
                         </tr>
                       ) : (
-                        members.map((member) => (
-                          <tr key={member.id} className="hover:bg-zinc-800/50 transition-colors">
-                            <td className="px-6 py-3">{member.name}</td>
-                            <td className="px-6 py-3 font-mono text-xs">{member.youtube_handle}</td>
-                            <td className="px-6 py-3">
-                              <span className="px-2.5 py-1 rounded-full bg-zinc-800 text-xs font-medium">
-                                {member.tier}
-                              </span>
+                        filteredVerifications.map((req) => (
+                          <tr key={req.id} className="hover:bg-zinc-800/50 transition-colors">
+                            <td className="px-6 py-3">{req.email}</td>
+                            <td className="px-6 py-3 font-medium">
+                              {req.members ? req.members.name : req.youtube_handle}
                             </td>
+                            <td className="px-6 py-3 text-zinc-400">
+                              {new Date(req.created_at).toLocaleDateString()}
+                            </td>
+                            {activeTab === 'verified' && (
+                              <td className="px-6 py-3">
+                                <span className="px-2.5 py-1 rounded-full bg-zinc-800 text-xs font-medium">
+                                  {req.members?.tier || 'Unknown'}
+                                </span>
+                              </td>
+                            )}
                             <td className="px-6 py-3">
-                              <span className={cn(
-                                "px-2.5 py-1 rounded-full text-xs font-medium",
-                                member.status === 'active' ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
-                              )}>
-                                {member.status}
-                              </span>
+                              <a 
+                                href={`mailto:${req.email}`}
+                                className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 bg-blue-500/10 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                              >
+                                <Mail className="w-3 h-3" />
+                                Email
+                              </a>
                             </td>
                           </tr>
                         ))

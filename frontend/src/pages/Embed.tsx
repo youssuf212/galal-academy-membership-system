@@ -9,8 +9,9 @@ export default function Embed() {
     email: '',
     youtubeName: ''
   });
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success_verified' | 'success_pending' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [memberTier, setMemberTier] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,39 +19,50 @@ export default function Embed() {
     setErrorMessage('');
 
     try {
-      // 1. First, search if this youtube name exists in the members table
-      const { data: member, error: memberError } = await supabase
+      // 1. Search if this youtube name exists in the members table
+      const { data: member } = await supabase
         .from('members')
         .select('*')
         .ilike('name', formData.youtubeName)
         .single();
 
-      if (memberError || !member) {
-        throw new Error("We couldn't find an active membership for this YouTube Name. Make sure you typed it exactly as it appears on YouTube, and that you are an active member.");
-      }
-
-      // 2. Insert into verifications table
-      const { error: verificationError } = await supabase
-        .from('verifications')
-        .insert([
-          {
+      if (member) {
+        // MATCH FOUND
+        // Insert into verifications table as verified
+        const { error: verificationError } = await supabase
+          .from('verifications')
+          .insert([{
             member_id: member.id,
             email: formData.email,
-            youtube_handle: member.youtube_handle, // Use the real handle from the db
+            youtube_handle: formData.youtubeName,
             status: 'verified',
             verified_at: new Date().toISOString()
-          }
-        ]);
-
-      if (verificationError) {
-        if (verificationError.code === '23505') {
-           throw new Error("This YouTube handle has already been verified.");
+          }]);
+        
+        if (verificationError && verificationError.code === '23505') {
+            throw new Error("This YouTube Name has already been verified.");
         }
-        throw new Error("Failed to process verification. Please try again.");
+        
+        setMemberTier(member.tier);
+        setStatus('success_verified');
+        
+        // Note: Edge Function will handle actual email logic
+      } else {
+        // NO MATCH FOUND - Insert as Pending
+        const { error: verificationError } = await supabase
+          .from('verifications')
+          .insert([{
+            email: formData.email,
+            youtube_handle: formData.youtubeName, // Store submitted name here
+            status: 'pending'
+          }]);
+        
+        if (verificationError && verificationError.code === '23505') {
+            throw new Error("A request for this YouTube Name is already pending.");
+        }
+        
+        setStatus('success_pending');
       }
-
-      // 3. Mark success (The edge function will handle Slack/Drive via database webhook/trigger later)
-      setStatus('success');
       
     } catch (err: any) {
       console.error(err);
@@ -59,14 +71,29 @@ export default function Embed() {
     }
   };
 
-  if (status === 'success') {
+  if (status === 'success_verified') {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center bg-zinc-950 min-h-screen text-zinc-50 font-sans">
         <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Verification Successful!</h2>
-        <p className="text-zinc-400 max-w-sm">
-          Your access is being provisioned. You should receive an email with your Google Drive and Slack invitations shortly.
+        <h2 className="text-2xl font-bold mb-2">Thank you for being a member!</h2>
+        <p className="text-zinc-400 max-w-sm mb-6">
+          Hello {formData.name}, we are provisioning your <strong>{memberTier}</strong> access right now. You will receive an email shortly with your Google Drive and Slack invitations.
         </p>
+        <p className="text-sm text-zinc-500">Need help? Contact <a href="mailto:agytmembers@gmail.com" className="text-blue-400 hover:underline">agytmembers@gmail.com</a></p>
+      </div>
+    );
+  }
+
+  if (status === 'success_pending') {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center bg-zinc-950 min-h-screen text-zinc-50 font-sans">
+        <Loader2 className="w-16 h-16 text-yellow-500 mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Request Received!</h2>
+        <p className="text-zinc-400 max-w-sm mb-6">
+          Your request is currently being reviewed and will be updated shortly once our member database syncs. 
+          We'll send an update to <strong>{formData.email}</strong> as soon as you're verified.
+        </p>
+        <p className="text-sm text-zinc-500">Need help? Contact <a href="mailto:agytmembers@gmail.com" className="text-blue-400 hover:underline">agytmembers@gmail.com</a></p>
       </div>
     );
   }
@@ -150,6 +177,10 @@ export default function Embed() {
               'Verify Membership'
             )}
           </button>
+
+          <p className="text-center text-xs text-zinc-600 mt-6 border-t border-zinc-800 pt-6">
+            Need support? Email us at <a href="mailto:agytmembers@gmail.com" className="text-blue-500 hover:underline">agytmembers@gmail.com</a>
+          </p>
         </form>
       </div>
     </div>

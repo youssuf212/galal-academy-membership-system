@@ -1,9 +1,51 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { Resend } from 'npm:resend@2.0.0'
 import { corsHeaders } from '../_shared/cors.ts'
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-const resend = new Resend(RESEND_API_KEY)
+const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID')
+const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET')
+const GOOGLE_REFRESH_TOKEN = Deno.env.get('GOOGLE_REFRESH_TOKEN')
+
+async function getAccessToken(): Promise<string> {
+  const url = 'https://oauth2.googleapis.com/token'
+  const params = new URLSearchParams()
+  params.append('client_id', GOOGLE_CLIENT_ID || '')
+  params.append('client_secret', GOOGLE_CLIENT_SECRET || '')
+  params.append('refresh_token', GOOGLE_REFRESH_TOKEN || '')
+  params.append('grant_type', 'refresh_token')
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to refresh Google Access Token: ' + await res.text())
+  }
+
+  const data = await res.json()
+  return data.access_token
+}
+
+function createBase64Email(to: string, subject: string, htmlBody: string): string {
+  // Construct a raw MIME email string
+  const emailLines = [
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: text/html; charset=utf-8`,
+    '',
+    htmlBody
+  ]
+  const rawEmail = emailLines.join('\r\n')
+  
+  // Base64Url encode it per Gmail API requirements
+  const encoded = btoa(unescape(encodeURIComponent(rawEmail)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+  return encoded
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -56,18 +98,35 @@ serve(async (req) => {
       `
     }
 
-    const data = await resend.emails.send({
-      from: 'Galal Academy <onboarding@resend.dev>', // You must verify a domain in Resend to change this
-      to: [email], // Note: while using resend.dev test domain, you can only send to the email you used to sign up for Resend
-      subject: subject,
-      html: html,
+    // 1. Refresh Google OAuth Token
+    const accessToken = await getAccessToken()
+    
+    // 2. Prepare Base64 email encoding
+    const base64Message = createBase64Email(email, subject, html)
+
+    // 3. Send email using Gmail API
+    const response = await fetch('https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        raw: base64Message
+      })
     })
 
-    return new Response(JSON.stringify(data), {
+    if (!response.ok) {
+        throw new Error('Failed to send email via Gmail API: ' + await response.text())
+    }
+
+    const data = await response.json()
+
+    return new Response(JSON.stringify({ success: true, messageId: data.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
+  } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

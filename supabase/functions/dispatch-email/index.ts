@@ -107,7 +107,7 @@ serve(async (req) => {
     const base64Message = createBase64Email(email, subject, html)
 
     // 3. Send email using Gmail API
-    const response = await fetch('https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send', {
+    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

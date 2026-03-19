@@ -121,10 +121,6 @@ serve(async (req) => {
         </div>
         
         <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">You will shortly receive separate invitations linking your email (<strong style="color: #0f172a; font-weight: 600;">${email}</strong>) to our private Slack community and Google Drive repositories. Please accept those invitations to sync your workspace.</p>
-        
-        <div style="text-align: center; margin-top: 40px;">
-          <a href="#" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 6px; letter-spacing: 0.5px;">View Dashboard</a>
-        </div>
       `)
     } else if (type === 'rejected') {
       subject = 'Action Required: Unverified Membership'

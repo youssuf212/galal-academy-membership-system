@@ -125,7 +125,7 @@ export default function Embed() {
 
   if (status === 'success_verified') {
     const normalizedTier = memberTier.toLowerCase().trim();
-    const isGold = normalizedTier === 'gold';
+    const isGold = normalizedTier.includes('gold');
     const isCoaching = normalizedTier.includes('personal coaching');
 
     let successMessage: string;

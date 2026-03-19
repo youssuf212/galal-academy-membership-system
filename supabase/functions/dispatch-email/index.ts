@@ -113,7 +113,7 @@ serve(async (req) => {
       
       // Determine if this is a Personal Coaching tier
       const isCoaching = normalizedTier.includes('personal coaching')
-      const isGold = normalizedTier === 'gold'
+      const isGold = normalizedTier.includes('gold')
       
       // Coaching session count: "personal coaching +" or "++" get 2, base "personal coaching" gets 1
       const coachingSessions = (normalizedTier.includes('personal coaching +')) ? 2 : 1

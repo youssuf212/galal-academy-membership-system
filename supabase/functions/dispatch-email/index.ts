@@ -191,15 +191,13 @@ serve(async (req) => {
     console.log(`[Dispatch Email] Evaluating Google Drive invite... Type: ${type}, Tier: '${tier}'`)
     if (type === 'welcome') {
       const eliteTiers = [
-        'Elite',
-        'Platinum',
-        'Personal Coaching',
-        'Personal Coaching +',
-        'Personal Coaching ++'
+        'elite',
+        'platinum',
+        'personal coaching'
       ]
 
-      const normalizedTier = tier ? tier.trim() : ''
-      const isElite = eliteTiers.includes(normalizedTier)
+      const normalizedTier = tier ? tier.toLowerCase().trim() : ''
+      const isElite = eliteTiers.some(keyword => normalizedTier.includes(keyword))
       console.log(`[Dispatch Email] Normalized Tier: '${normalizedTier}'. Is Elite? ${isElite}`)
 
       if (isElite) {

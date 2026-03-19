@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { CheckCircle2, Loader2, Youtube } from 'lucide-react';
+import { CheckCircle2, Loader2, Youtube, HelpCircle, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Embed() {
@@ -12,6 +12,7 @@ export default function Embed() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success_verified' | 'success_pending' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [memberTier, setMemberTier] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,18 +204,50 @@ export default function Embed() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">YouTube Profile Name</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">YouTube Channel Name</label>
             <input
               type="text"
               required
               value={formData.youtubeName}
               onChange={(e) => setFormData(prev => ({ ...prev, youtubeName: e.target.value }))}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 text-slate-900 transition-colors"
-              placeholder="e.g. Hamed Y"
+              placeholder="e.g. Galal Academy"
             />
-            <p className="text-xs text-slate-500 mt-1">
-              The exact name you use on your YouTube profile.
-            </p>
+            
+            {/* Collapsible Help Section */}
+            <button
+              type="button"
+              onClick={() => setShowHelp(!showHelp)}
+              className="flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              How to find your channel name
+              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showHelp && "rotate-180")} />
+            </button>
+
+            {showHelp && (
+              <div className="mt-3 p-4 bg-slate-50 border border-slate-200 rounded-xl text-left">
+                {/* Annotated YouTube Screenshot */}
+                <div className="mb-3 rounded-lg overflow-hidden border border-slate-200">
+                  <img 
+                    src="/yt-channel-name-guide.png" 
+                    alt="YouTube channel name location" 
+                    className="w-full h-auto"
+                  />
+                </div>
+                
+                <p className="text-xs font-semibold text-slate-700 mb-2">How to get your YouTube channel name:</p>
+                <ol className="text-xs text-slate-600 space-y-1.5 list-decimal list-inside">
+                  <li>Head to your profile on YouTube</li>
+                  <li>Copy your <span className="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-medium">channel name</span> (not the @handle)</li>
+                  <li><strong>Don't paste a link</strong> — only paste the name itself</li>
+                </ol>
+                <div className="mt-2.5 flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                  <span className="shrink-0">⚠️</span>
+                  <span><strong>Important:</strong> To ensure access, please make sure you enter the name correctly.</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {status === 'error' && (

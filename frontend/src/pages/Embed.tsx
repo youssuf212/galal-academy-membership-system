@@ -199,7 +199,7 @@ export default function Embed() {
               placeholder="john@example.com"
             />
             <p className="text-xs text-slate-500 mt-1">
-              We will use this to send your Slack and Google Drive invites.
+              Please use a <strong className="text-slate-700">Gmail address</strong> — our files are hosted on Google Drive.
             </p>
           </div>
 

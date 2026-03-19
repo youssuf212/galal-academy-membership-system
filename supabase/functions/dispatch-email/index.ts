@@ -170,7 +170,6 @@ serve(async (req) => {
     // 2. Prepare Base64 email encoding
     const base64Message = createBase64Email(email, subject, htmlContent)
 
-    // 3. Send email using Gmail API
     const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',
       headers: {
@@ -187,6 +186,44 @@ serve(async (req) => {
     }
 
     const data = await response.json()
+
+    // 4. Google Drive Integration (Elite Tiers)
+    if (type === 'welcome') {
+      const eliteTiers = [
+        'Elite',
+        'Platinum',
+        'Personal Coaching',
+        'Personal Coaching +',
+        'Personal Coaching ++'
+      ]
+
+      if (tier && eliteTiers.includes(tier)) {
+        const folderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID')
+        if (folderId) {
+          console.log(`[Dispatch Email] Elite Tier detected (${tier}). Sharing Google Drive folder ${folderId} with ${email}...`)
+          const driveRes = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}/permissions`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              role: 'reader', // View only. Use 'writer' or 'commenter' if needed.
+              type: 'user',
+              emailAddress: email
+            })
+          })
+          
+          if (!driveRes.ok) {
+            console.error('[Dispatch Email] Failed to invite user to Google Drive:', await driveRes.text())
+          } else {
+            console.log(`[Dispatch Email] Successfully invited ${email} to Google Drive folder!`)
+          }
+        } else {
+            console.log(`[Dispatch Email] Warning: GOOGLE_DRIVE_FOLDER_ID not set in environment. Skipping Drive invite.`)
+        }
+      }
+    }
 
     return new Response(JSON.stringify({ success: true, messageId: data.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

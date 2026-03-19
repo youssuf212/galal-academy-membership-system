@@ -111,7 +111,15 @@ serve(async (req) => {
     if (type === 'welcome') {
       subject = 'Welcome to Galal Academy Premium'
       
-      const slackInviteBlock = isElite ? `
+      // Determine if this is a Personal Coaching tier
+      const isCoaching = normalizedTier.includes('personal coaching')
+      const isGold = normalizedTier === 'gold'
+      
+      // Coaching session count: "personal coaching +" or "++" get 2, base "personal coaching" gets 1
+      const coachingSessions = (normalizedTier.includes('personal coaching +')) ? 2 : 1
+
+      // Slack block — only for Elite tiers (not Gold)
+      const slackInviteBlock = (isElite && !isGold) ? `
         <div style="margin-top: 32px; padding: 24px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
           <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #166534;">Join the Private Slack Community</h3>
           <p style="margin: 0 0 16px 0; font-size: 14px; color: #15803d; line-height: 1.5;">Since you are an Elite/Premium member, you have exclusive access to our private Slack workspace.</p>
@@ -119,13 +127,30 @@ serve(async (req) => {
         </div>
       ` : ''
 
-      const confirmationText = isElite 
-        ? `You have automatically been invited to our Google Drive repository - check your email for the official Google Drive notification. Use the secure link below to join our Slack workspace!`
-        : `Your membership is officially active. Welcome to the community!`
+      // Coaching block — only for Personal Coaching tiers
+      const coachingBlock = isCoaching ? `
+        <div style="margin-top: 32px; padding: 24px; background-color: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #3730a3;">Free 1:1 Coaching Sessions</h3>
+          <p style="margin: 0 0 16px 0; font-size: 14px; color: #4338ca; line-height: 1.5;">Your ${tier} tier includes <strong>${coachingSessions} free monthly 1:1 coaching session${coachingSessions > 1 ? 's' : ''}</strong>. Use the link below to book your session${coachingSessions > 1 ? 's' : ''}.</p>
+          <a href="https://www.galalconsulting.com/service-page/ytcoaching" style="display: inline-block; background-color: #3730a3; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 13px;">Book Your Session</a>
+        </div>
+      ` : ''
+
+      // Confirmation text varies by tier
+      let confirmationText: string
+      if (isGold) {
+        confirmationText = `Your membership is officially active. Welcome to the community!`
+      } else if (isElite && !isCoaching) {
+        confirmationText = `You have automatically been invited to our Google Drive repository - check your email for the official Google Drive notification. Use the secure link below to join our Slack workspace!`
+      } else if (isCoaching) {
+        confirmationText = `You have automatically been invited to our Google Drive repository - check your email for the official Google Drive notification. You also have access to exclusive 1:1 coaching sessions — see below for details!`
+      } else {
+        confirmationText = `Your membership is officially active. Welcome to the community!`
+      }
 
       htmlContent = baseHtml(`
         <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">Welcome, ${name}.</h2>
-        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Your exclusive membership access has been successfully verified and provisioned. You now have full access to our private infrastructure.</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Your exclusive membership access has been successfully verified and provisioned.${isGold ? '' : ' You now have full access to our private infrastructure.'}</p>
         
         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
           <div style="display: block; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 16px;">
@@ -145,6 +170,7 @@ serve(async (req) => {
         <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 0;">${confirmationText}</p>
         
         ${slackInviteBlock}
+        ${coachingBlock}
       `)
     } else if (type === 'rejected') {
       subject = 'Action Required: Unverified Membership'

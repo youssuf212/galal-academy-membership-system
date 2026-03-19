@@ -124,13 +124,24 @@ export default function Embed() {
   };
 
   if (status === 'success_verified') {
+    const normalizedTier = memberTier.toLowerCase().trim();
+    const isGold = normalizedTier === 'gold';
+    const isCoaching = normalizedTier.includes('personal coaching');
+
+    let successMessage: string;
+    if (isGold) {
+      successMessage = `Hello ${formData.name}, your <strong>${memberTier}</strong> membership has been verified. Welcome to the community!`;
+    } else if (isCoaching) {
+      successMessage = `Hello ${formData.name}, we are provisioning your <strong>${memberTier}</strong> access right now. You will receive an email shortly with your Google Drive invitation and 1:1 coaching session details.`;
+    } else {
+      successMessage = `Hello ${formData.name}, we are provisioning your <strong>${memberTier}</strong> access right now. You will receive an email shortly with your Google Drive and Slack invitations.`;
+    }
+
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center bg-slate-50 min-h-screen text-slate-900 font-sans">
         <CheckCircle2 className="w-16 h-16 text-emerald-600 mb-4" />
         <h2 className="text-2xl font-bold mb-2">Thank you for being a member!</h2>
-        <p className="text-slate-600 max-w-sm mb-6">
-          Hello {formData.name}, we are provisioning your <strong>{memberTier}</strong> access right now. You will receive an email shortly with your Google Drive and Slack invitations.
-        </p>
+        <p className="text-slate-600 max-w-sm mb-6" dangerouslySetInnerHTML={{ __html: successMessage }} />
         <p className="text-sm text-slate-500">Need help? Contact <a href="mailto:agytmembers@gmail.com" className="text-blue-600 hover:underline">agytmembers@gmail.com</a></p>
       </div>
     );

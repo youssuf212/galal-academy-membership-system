@@ -65,6 +65,10 @@ export default function Admin() {
     setLoading(false);
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   const handleManualStatus = async (id: string, newStatus: string) => {
     if (!window.confirm(`Are you sure you want to change this member's status to ${newStatus}?`)) return;
     
@@ -181,28 +185,42 @@ export default function Admin() {
                 const match = freshMembers.find(m => m.name.toLowerCase() === req.youtube_handle.toLowerCase());
                 
                 if (match) {
-                  // Mark as verified
-                  await supabase.from('verifications').update({ 
-                    status: 'verified', 
-                    member_id: match.id,
-                    verified_at: new Date().toISOString()
-                  }).eq('id', req.id);
+                  // Check if the timestamp in this CSV is actually fresh
+                  const daysActive = Math.floor((new Date().getTime() - new Date(match.joined_at).getTime()) / (1000 * 3600 * 24));
                   
-                  const joinDateObj = new Date(match.joined_at || Date.now());
-                  const renewalDateObj = new Date(match.joined_at || Date.now());
-                  renewalDateObj.setMonth(renewalDateObj.getMonth() + 1);
+                  if (daysActive > 31) {
+                    // They match the handle, but their payment is expired/not renewed.
+                    await supabase.from('verifications').update({ 
+                      status: 'rejected' 
+                    }).eq('id', req.id);
+                    
+                    supabase.functions.invoke('dispatch-email', {
+                      body: { type: 'rejected', email: req.email, name: req.youtube_handle }
+                    }).catch(console.error);
+                  } else {
+                    // Fresh payment!
+                    await supabase.from('verifications').update({ 
+                      status: 'verified', 
+                      member_id: match.id,
+                      verified_at: new Date().toISOString()
+                    }).eq('id', req.id);
+                    
+                    const joinDateObj = new Date(match.joined_at || Date.now());
+                    const renewalDateObj = new Date(match.joined_at || Date.now());
+                    renewalDateObj.setMonth(renewalDateObj.getMonth() + 1);
 
-                  // Trigger email
-                  supabase.functions.invoke('dispatch-email', {
-                    body: { 
-                      type: 'welcome', 
-                      email: req.email, 
-                      name: match.name, 
-                      tier: match.tier,
-                      join_date: joinDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                      renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-                    }
-                  }).catch(console.error);
+                    // Trigger welcome email
+                    supabase.functions.invoke('dispatch-email', {
+                      body: { 
+                        type: 'welcome', 
+                        email: req.email, 
+                        name: match.name, 
+                        tier: match.tier,
+                        join_date: joinDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                        renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                      }
+                    }).catch(console.error);
+                  }
                 } else {
                   // Mark as rejected since they aren't in the new CSV either
                   await supabase.from('verifications').update({ 

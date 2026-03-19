@@ -61,6 +61,15 @@ serve(async (req) => {
     let subject = ''
     let htmlContent = ''
 
+    // Evaluate Elite Tier globally
+    const eliteTiers = [
+      'elite',
+      'platinum',
+      'personal coaching'
+    ]
+    const normalizedTier = tier ? tier.toLowerCase().trim() : ''
+    const isElite = eliteTiers.some(keyword => normalizedTier.includes(keyword))
+
     const baseHtml = (bodyContent: string) => `
       <!DOCTYPE html>
       <html lang="en">
@@ -101,6 +110,19 @@ serve(async (req) => {
 
     if (type === 'welcome') {
       subject = 'Welcome to Galal Academy Premium'
+      
+      const slackInviteBlock = isElite ? `
+        <div style="margin-top: 32px; padding: 24px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #166534;">Join the Private Slack Community</h3>
+          <p style="margin: 0 0 16px 0; font-size: 14px; color: #15803d; line-height: 1.5;">Since you are an Elite/Premium member, you have exclusive access to our private Slack workspace.</p>
+          <a href="https://join.slack.com/t/agsapcommunity/shared_invite/zt-3t1eaja8k-KaZmLal1Z2_12u6QYrbioQ" style="display: inline-block; background-color: #166534; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 13px;">Join Slack Now</a>
+        </div>
+      ` : ''
+
+      const confirmationText = isElite 
+        ? `You have automatically been invited to our Google Drive repository - check your email for the official Google Drive notification. Use the secure link below to join our Slack workspace!`
+        : `Your membership is officially active. Welcome to the community!`
+
       htmlContent = baseHtml(`
         <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">Welcome, ${name}.</h2>
         <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Your exclusive membership access has been successfully verified and provisioned. You now have full access to our private infrastructure.</p>
@@ -120,7 +142,9 @@ serve(async (req) => {
           </div>
         </div>
         
-        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">You will shortly receive separate invitations linking your email (<strong style="color: #0f172a; font-weight: 600;">${email}</strong>) to our private Slack community and Google Drive repositories. Please accept those invitations to sync your workspace.</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 0;">${confirmationText}</p>
+        
+        ${slackInviteBlock}
       `)
     } else if (type === 'rejected') {
       subject = 'Action Required: Unverified Membership'
@@ -190,14 +214,6 @@ serve(async (req) => {
     // 4. Google Drive Integration (Elite Tiers)
     console.log(`[Dispatch Email] Evaluating Google Drive invite... Type: ${type}, Tier: '${tier}'`)
     if (type === 'welcome') {
-      const eliteTiers = [
-        'elite',
-        'platinum',
-        'personal coaching'
-      ]
-
-      const normalizedTier = tier ? tier.toLowerCase().trim() : ''
-      const isElite = eliteTiers.some(keyword => normalizedTier.includes(keyword))
       console.log(`[Dispatch Email] Normalized Tier: '${normalizedTier}'. Is Elite? ${isElite}`)
 
       if (isElite) {

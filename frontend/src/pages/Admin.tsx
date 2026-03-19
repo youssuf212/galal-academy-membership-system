@@ -196,7 +196,7 @@ export default function Admin() {
                     }).eq('id', req.id);
                     
                     supabase.functions.invoke('dispatch-email', {
-                      body: { type: 'rejected', email: req.email, name: req.youtube_handle }
+                      body: { type: 'expired', email: req.email, name: req.youtube_handle }
                     }).catch(console.error);
                   } else {
                     // Fresh payment!

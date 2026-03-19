@@ -186,6 +186,26 @@ serve(async (req) => {
 
         <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Our system aligns with YouTube records periodically. You will receive an automated follow-up email precisely when your membership status is confirmed and your access channels are opened.</p>
       `)
+    } else if (type === 'expired') {
+      subject = 'Membership Expired — Galal Academy'
+      htmlContent = baseHtml(`
+        <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">Membership Expired</h2>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 16px;">Hello ${name || 'there'},</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">We found your profile in our records, but unfortunately your membership subscription appears to have expired. Your last known renewal was over 31 days ago.</p>
+        
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+          <div style="display: block; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 16px;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Status</span>
+            <strong style="font-size: 15px; color: #ef4444; font-weight: 600; display: block;">Expired</strong>
+          </div>
+          <div style="display: block;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Profile</span>
+            <strong style="font-size: 15px; color: #0f172a; font-weight: 600; display: block;">${name || 'N/A'}</strong>
+          </div>
+        </div>
+
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">To regain access to our exclusive Google Drive resources and Slack community, please renew your YouTube membership subscription. Once renewed, submit a new verification request and you'll be granted access automatically.</p>
+      `)
     } else if (type === 'lifecycle-day-29') {
       subject = 'Thank You for Choosing Galal Academy Premium'
       htmlContent = baseHtml(`

@@ -186,6 +186,43 @@ serve(async (req) => {
 
         <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Our system aligns with YouTube records periodically. You will receive an automated follow-up email precisely when your membership status is confirmed and your access channels are opened.</p>
       `)
+    } else if (type === 'lifecycle-day-29') {
+      subject = 'Thank You for Choosing Galal Academy Premium'
+      htmlContent = baseHtml(`
+        <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">Checking In, ${name}.</h2>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">You've officially been a verified member of our community for the past 29 days! We wanted to quickly reach out to say thank you for your continued support.</p>
+        
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #0f172a;">Ready to Upgrade?</h3>
+          <p style="margin: 0 0 16px 0; font-size: 14px; color: #475569; line-height: 1.5;">If you are enjoying your current tier, you can seamlessly unlock even more exclusive benefits and higher-level access by upgrading your tier on our YouTube channel today.</p>
+        </div>
+
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">As long as your membership auto-renews on YouTube, your existing permissions will remain completely uninterrupted. We look forward to seeing you in the next billing cycle!</p>
+      `)
+    } else if (type === 'lifecycle-day-32') {
+      subject = 'Action Required: Your Membership Has Expired'
+      
+      const upsellOffers: Record<string, string> = {
+        'elite': 'Platinum',
+        'platinum': 'Personal Coaching',
+        'personal coaching': 'Personal Coaching +',
+        'personal coaching +': 'Personal Coaching ++',
+        'gold': 'Elite',
+        'basic': 'Gold'
+      }
+      const nextTier = upsellOffers[tier?.toLowerCase() || ''] || 'a higher tier'
+
+      htmlContent = baseHtml(`
+        <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">Membership Expired</h2>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Hello ${name}, your 30-day membership cycle has officially expired, and your <strong>Google Drive access has been automatically revoked.</strong></p>
+        
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">We're always striving to improve, and we'd love to hear your feedback on why you decided not to renew.</p>
+
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #166534;">Exclusive Comeback Offer</h3>
+          <p style="margin: 0 0 16px 0; font-size: 14px; color: #15803d; line-height: 1.5;">We'd love to have you back! If you decide to rejoin us today at the <strong>${nextTier}</strong> tier, please respond to this email for a special <strong>10% Discount</strong> on your upgraded membership!</p>
+        </div>
+      `)
     }
 
     // 1. Refresh Google OAuth Token
@@ -244,6 +281,38 @@ serve(async (req) => {
         }
       } else {
         console.log(`[Dispatch Email] Tier '${normalizedTier}' is not in the Elite tiers list. Skipping Drive invite.`)
+      }
+    } else if (type === 'lifecycle-day-32') {
+      const folderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID')
+      if (folderId) {
+        console.log(`[Dispatch Email] Handling Expiry: Revoking Google Drive access for ${email}...`)
+        
+        // Step 1: List permissions to find the permission ID targeting this email
+        const listRes = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}/permissions?fields=permissions(id,emailAddress)`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        })
+        
+        if (listRes.ok) {
+          const listData = await listRes.json()
+          const perm = listData.permissions?.find((p: any) => p.emailAddress?.toLowerCase() === email.toLowerCase())
+          
+          if (perm && perm.id) {
+             // Step 2: Delete that permission
+             const delRes = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}/permissions/${perm.id}`, {
+               method: 'DELETE',
+               headers: { 'Authorization': `Bearer ${accessToken}` }
+             })
+             if (delRes.ok) {
+               console.log(`[Dispatch Email] SUCCESS: Removed Drive access for ${email}`)
+             } else {
+               console.error(`[Dispatch Email] ERROR deleting permission:`, await delRes.text())
+             }
+          } else {
+             console.log(`[Dispatch Email] No Drive permissions found for ${email} to revoke.`)
+          }
+        } else {
+          console.error(`[Dispatch Email] ERROR listing permissions:`, await listRes.text())
+        }
       }
     }
 

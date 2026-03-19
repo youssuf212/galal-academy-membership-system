@@ -17,6 +17,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'rejected'>('pending');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
+  const [sweepStatus, setSweepStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
 
   // Filtering state
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,10 +65,6 @@ export default function Admin() {
     setLoading(false);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
   const handleManualStatus = async (id: string, newStatus: string) => {
     if (!window.confirm(`Are you sure you want to change this member's status to ${newStatus}?`)) return;
     
@@ -82,6 +79,54 @@ export default function Admin() {
       // Optional: re-fetch to ensure fresh data
       fetchDashboardData();
     }
+  };
+
+  const runLifecycleSweep = async () => {
+    if (!window.confirm("Are you sure you want to run the Lifecycle Sweep? This will immediately delete expired member Drive permissions and send automated upsell emails!")) return;
+    
+    setSweepStatus('processing');
+    let errors = 0;
+    let emailsSent = 0;
+    
+    for (const v of verifications) {
+      if (v.status !== 'verified' || !v.members) continue;
+      
+      const daysActive = Math.floor((new Date().getTime() - new Date(v.members.joined_at).getTime()) / (1000 * 3600 * 24));
+      
+      // Day ~29 Upsell
+      if (daysActive >= 29 && daysActive < 32 && !v.members.day_29_sent) {
+        try {
+          await supabase.functions.invoke('dispatch-email', {
+             body: { type: 'lifecycle-day-29', email: v.email, name: v.members.name, tier: v.members.tier }
+          });
+          await supabase.from('members').update({ day_29_sent: true }).eq('id', v.members.id);
+          emailsSent++;
+        } catch(e) { console.error(e); errors++; }
+      }
+      
+      // Day 32+ Expiry & Revocation
+      if (daysActive >= 32 && !v.members.day_32_sent) {
+        try {
+          await supabase.functions.invoke('dispatch-email', {
+             body: { type: 'lifecycle-day-32', email: v.email, name: v.members.name, tier: v.members.tier }
+          });
+          await supabase.from('members').update({ day_32_sent: true }).eq('id', v.members.id);
+          // Revoke from verified list
+          await supabase.from('verifications').update({ status: 'rejected' }).eq('id', v.id);
+          emailsSent++;
+        } catch(e) { console.error(e); errors++; }
+      }
+    }
+    
+    fetchDashboardData();
+    if (errors > 0) {
+      setSweepStatus('error');
+      alert(`Sweep completed but encountered ${errors} errors. Check console.`);
+    } else {
+      setSweepStatus('success');
+      alert(`Sweep completely successful! Automated ${emailsSent} lifecycle actions.`);
+    }
+    setTimeout(() => setSweepStatus('idle'), 5000);
   };
 
   const onDrop = async (acceptedFiles: File[]) => {
@@ -328,6 +373,23 @@ export default function Admin() {
               )}
             </div>
             
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 mt-4 shadow-sm">
+              <h2 className="text-lg font-semibold mb-2 flex items-center gap-2 text-slate-800">
+                <Clock className="w-5 h-5 text-indigo-600" />
+                Lifecycle Automation
+              </h2>
+              <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                Run a sweeping pass across all members. Anyone exceeding 31 active days will lose Drive permissions and receive a fallback discount. Day 29+ members will get an upsell retention sequence.
+              </p>
+              <button
+                onClick={runLifecycleSweep}
+                disabled={sweepStatus === 'processing'}
+                className="w-full py-2.5 px-4 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {sweepStatus === 'processing' ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : 'Run Action Sweep'}
+              </button>
+            </div>
+
             <div className="bg-white p-6 rounded-2xl border border-slate-200 mt-4 text-center shadow-sm">
               <p className="text-sm text-slate-600">
                 Support: <a href="mailto:agytmembers@gmail.com" className="text-blue-600 hover:underline">agytmembers@gmail.com</a>

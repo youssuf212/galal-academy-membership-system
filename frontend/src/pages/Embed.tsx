@@ -197,8 +197,8 @@ export default function Embed() {
             )}
           </button>
 
-          <p className="text-center text-xs text-zinc-600 mt-6 border-t border-zinc-800 pt-6">
-            Need support? Email us at <a href="mailto:agytmembers@gmail.com" className="text-blue-500 hover:underline">agytmembers@gmail.com</a>
+          <p className="text-center text-xs text-slate-500 mt-6 border-t border-slate-200 pt-6">
+            Need support? Email us at <a href="mailto:agytmembers@gmail.com" className="text-blue-600 hover:underline">agytmembers@gmail.com</a>
           </p>
         </form>
       </div>

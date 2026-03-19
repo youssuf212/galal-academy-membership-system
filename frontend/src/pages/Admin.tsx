@@ -173,48 +173,48 @@ export default function Admin() {
   });
 
   if (loading) {
-    return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-50">Loading...</div>;
+    return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-900">Loading...</div>;
   }
 
   // --- LOGIN VIEW ---
   if (!session) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold">Admin Portal</h1>
-            <p className="text-zinc-400 mt-2 text-sm">Sign in to manage members.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Admin Portal</h1>
+            <p className="text-slate-500 mt-2 text-sm">Sign in to manage members.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-1">Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 outline-none focus:border-blue-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-1">Password</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 outline-none focus:border-blue-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors"
+              className="w-full bg-black hover:bg-slate-800 text-white font-medium py-3 rounded-xl transition-colors"
             >
               Sign In
             </button>
           </form>
-          <div className="mt-6 text-center text-sm text-zinc-500">
-            For support contact <a href="mailto:agytmembers@gmail.com" className="text-blue-500 hover:underline">agytmembers@gmail.com</a>
+          <div className="mt-6 text-center text-sm text-slate-500">
+            For support contact <a href="mailto:agytmembers@gmail.com" className="text-blue-600 hover:underline">agytmembers@gmail.com</a>
           </div>
         </div>
       </div>
@@ -225,18 +225,18 @@ export default function Admin() {
 
   // --- DASHBOARD VIEW ---
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 p-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
-        <div className="flex items-center justify-between bg-zinc-900 p-6 rounded-2xl border border-zinc-800">
+        <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div>
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-            <p className="text-zinc-400 text-sm mt-1">Manage YouTube Memberships and Automations</p>
+            <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+            <p className="text-slate-500 text-sm mt-1">Manage YouTube Memberships and Automations</p>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-900 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -248,36 +248,37 @@ export default function Admin() {
           
           {/* Upload Widget */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <UploadCloud className="w-5 h-5" />
+                <UploadCloud className="w-5 h-5 text-slate-600" />
                 Sync YouTube CSV
               </h2>
-              <p className="text-xs text-zinc-400 mb-4">
-                Uploading a fresh CSV will automatically approve matches from the Pending Queue and reject non-matches.
+              <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                Uploading a fresh CSV will automatically approve matches from the Pending Queue and transition statuses accordingly.
               </p>
               
               <div
                 {...getRootProps()}
                 className={cn(
                   "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors",
-                  isDragActive ? "border-blue-500 bg-blue-500/10" : "border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800/50"
+                  isDragActive ? "border-blue-500 bg-blue-50" : "border-slate-300 hover:border-slate-400 hover:bg-slate-50"
                 )}
               >
                 <input {...getInputProps()} />
-                <UploadCloud className="w-8 h-8 mx-auto text-zinc-500 mb-4" />
-                <p className="text-sm text-zinc-300">
-                  Drag & drop the YouTube members CSV here, or click to select file.
+                <UploadCloud className="w-8 h-8 mx-auto text-slate-400 mb-4" />
+                <p className="text-sm text-slate-600 font-medium">
+                  Drag & drop the CSV here
                 </p>
+                <p className="text-xs text-slate-400 mt-1">or click to browse</p>
               </div>
 
               {/* Upload Status */}
               {uploadStatus !== 'idle' && (
                 <div className={cn(
                   "mt-4 p-4 rounded-xl flex items-start gap-3 text-sm",
-                  uploadStatus === 'processing' && "bg-blue-500/10 text-blue-400 border border-blue-500/20",
-                  uploadStatus === 'success' && "bg-green-500/10 text-green-400 border border-green-500/20",
-                  uploadStatus === 'error' && "bg-red-500/10 text-red-400 border border-red-500/20",
+                  uploadStatus === 'processing' && "bg-blue-50 text-blue-700 border border-blue-100",
+                  uploadStatus === 'success' && "bg-emerald-50 text-emerald-700 border border-emerald-100",
+                  uploadStatus === 'error' && "bg-red-50 text-red-700 border border-red-100",
                 )}>
                   {uploadStatus === 'processing' && <Loader2 className="w-5 h-5 animate-spin shrink-0" />}
                   {uploadStatus === 'success' && <CheckCircle2 className="w-5 h-5 shrink-0" />}
@@ -287,36 +288,36 @@ export default function Admin() {
               )}
             </div>
             
-            <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 mt-4 text-center">
-              <p className="text-sm text-zinc-500">
-                Support: <a href="mailto:agytmembers@gmail.com" className="text-blue-500 hover:underline">agytmembers@gmail.com</a>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 mt-4 text-center shadow-sm">
+              <p className="text-sm text-slate-600">
+                Support: <a href="mailto:agytmembers@gmail.com" className="text-blue-600 hover:underline">agytmembers@gmail.com</a>
               </p>
-              <p className="text-xs mt-2 text-zinc-600">Total Members Synced: {members.length}</p>
+              <p className="text-xs mt-2 text-slate-400">Total Members Synced: {members.length}</p>
             </div>
           </div>
 
           {/* Verification Table */}
           <div className="lg:col-span-2">
-             <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-[600px]">
-                <div className="border-b border-zinc-800">
+             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
+                <div className="border-b border-slate-200">
                   <div className="flex gap-4 px-6 pt-4">
                     <button 
                       onClick={() => setActiveTab('pending')}
-                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'pending' ? "border-yellow-500 text-yellow-500" : "border-transparent text-zinc-400 hover:text-white")}
+                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'pending' ? "border-amber-500 text-amber-600" : "border-transparent text-slate-500 hover:text-slate-900")}
                     >
                       <Clock className="w-4 h-4" />
                       Pending Requests ({verifications.filter(v => v.status === 'pending').length})
                     </button>
                     <button 
                       onClick={() => setActiveTab('verified')}
-                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'verified' ? "border-green-500 text-green-500" : "border-transparent text-zinc-400 hover:text-white")}
+                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'verified' ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-500 hover:text-slate-900")}
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       Verified Access ({verifications.filter(v => v.status === 'verified').length})
                     </button>
                     <button 
                       onClick={() => setActiveTab('rejected')}
-                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'rejected' ? "border-red-500 text-red-500" : "border-transparent text-zinc-400 hover:text-white")}
+                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'rejected' ? "border-red-500 text-red-600" : "border-transparent text-slate-500 hover:text-slate-900")}
                     >
                       <AlertCircle className="w-4 h-4" />
                       Rejected
@@ -326,45 +327,45 @@ export default function Admin() {
                 
                 <div className="flex-1 overflow-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className="bg-zinc-950/50 sticky top-0 shadow-sm">
+                    <thead className="bg-slate-50 sticky top-0 shadow-sm z-10 border-b border-slate-200">
                       <tr>
-                        <th className="px-6 py-4 font-medium text-zinc-400">Email</th>
-                        <th className="px-6 py-4 font-medium text-zinc-400">YouTube Name</th>
-                        <th className="px-6 py-4 font-medium text-zinc-400">Date Submitted</th>
-                        {activeTab === 'verified' && <th className="px-6 py-4 font-medium text-zinc-400">Tier</th>}
-                        <th className="px-6 py-4 font-medium text-zinc-400">Actions</th>
+                        <th className="px-6 py-4 font-medium text-slate-600">Email</th>
+                        <th className="px-6 py-4 font-medium text-slate-600">YouTube Name</th>
+                        <th className="px-6 py-4 font-medium text-slate-600">Date Submitted</th>
+                        {activeTab === 'verified' && <th className="px-6 py-4 font-medium text-slate-600">Tier</th>}
+                        <th className="px-6 py-4 font-medium text-slate-600">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-800">
+                    <tbody className="divide-y divide-slate-100 bg-white">
                       {filteredVerifications.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 flex flex-col items-center">
+                          <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                             No {activeTab} requests found.
                           </td>
                         </tr>
                       ) : (
                         filteredVerifications.map((req) => (
-                          <tr key={req.id} className="hover:bg-zinc-800/50 transition-colors">
-                            <td className="px-6 py-3">{req.email}</td>
-                            <td className="px-6 py-3 font-medium">
+                          <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-slate-900">{req.email}</td>
+                            <td className="px-6 py-4 font-medium text-slate-900">
                               {req.members ? req.members.name : req.youtube_handle}
                             </td>
-                            <td className="px-6 py-3 text-zinc-400">
+                            <td className="px-6 py-4 text-slate-500">
                               {new Date(req.created_at).toLocaleDateString()}
                             </td>
                             {activeTab === 'verified' && (
-                              <td className="px-6 py-3">
-                                <span className="px-2.5 py-1 rounded-full bg-zinc-800 text-xs font-medium">
+                              <td className="px-6 py-4">
+                                <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
                                   {req.members?.tier || 'Unknown'}
                                 </span>
                               </td>
                             )}
-                            <td className="px-6 py-3">
+                            <td className="px-6 py-4">
                               <a 
                                 href={`mailto:${req.email}`}
-                                className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 bg-blue-500/10 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                                className="inline-flex items-center gap-1.5 text-slate-700 hover:text-black bg-white border border-slate-300 hover:bg-slate-50 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm"
                               >
-                                <Mail className="w-3 h-3" />
+                                <Mail className="w-3.5 h-3.5" />
                                 Email
                               </a>
                             </td>

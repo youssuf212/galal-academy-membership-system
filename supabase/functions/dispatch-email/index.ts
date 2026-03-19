@@ -62,24 +62,25 @@ serve(async (req) => {
     let htmlContent = ''
 
     const emailStyle = `
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #000000; color: #ffffff; margin: 0; padding: 40px 16px; -webkit-font-smoothing: antialiased; }
-      .container { max-width: 600px; margin: 0 auto; background-color: #0a0a0a; border: 1px solid #27272a; border-radius: 12px; overflow: hidden; }
-      .header { border-bottom: 1px solid #27272a; padding: 32px; text-align: center; background-color: #050505; }
-      .header h1 { font-size: 20px; font-weight: 300; letter-spacing: 6px; margin: 0; color: #ffffff; text-transform: uppercase; }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 40px 16px; -webkit-font-smoothing: antialiased; }
+      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+      .header { border-bottom: 1px solid #e2e8f0; padding: 32px; text-align: center; background-color: #ffffff; }
+      .header-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #ffffff; }
+      .header h1 { font-size: 20px; font-weight: 500; letter-spacing: 4px; margin: 0; color: #0f172a; text-transform: uppercase; }
       .content { padding: 48px 40px; }
-      .h2 { font-size: 22px; font-weight: 500; margin-top: 0; margin-bottom: 24px; color: #ffffff; }
-      .p { font-size: 15px; line-height: 1.7; color: #a1a1aa; margin-bottom: 32px; }
-      .strong { color: #ffffff; font-weight: 600; }
-      .details-box { background-color: #121214; border: 1px solid #27272a; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
-      .detail-row { display: block; margin-bottom: 16px; border-bottom: 1px dashed #27272a; padding-bottom: 16px; }
+      .h2 { font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a; }
+      .p { font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px; }
+      .strong { color: #0f172a; font-weight: 600; }
+      .details-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+      .detail-row { display: block; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 16px; }
       .detail-row:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
-      .detail-label { font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px; }
-      .detail-value { font-size: 15px; color: #ffffff; font-weight: 500; display: block; }
-      .tier-badge { display: inline-block; background-color: #ffffff; color: #000000; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; vertical-align: middle; margin-left: 8px; }
-      .btn { display: inline-block; background-color: #ffffff; color: #000000; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 6px; letter-spacing: 0.5px; transition: background-color 0.2s; }
-      .footer { padding: 32px; text-align: center; border-top: 1px solid #27272a; background-color: #050505; }
-      .footer p { font-size: 13px; color: #52525b; margin: 0; }
-      .footer a { color: #f4f4f5; text-decoration: none; }
+      .detail-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px; }
+      .detail-value { font-size: 15px; color: #0f172a; font-weight: 600; display: block; }
+      .tier-badge { display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; vertical-align: middle; margin-left: 8px; }
+      .btn { display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 6px; letter-spacing: 0.5px; transition: opacity 0.2s; }
+      .footer { padding: 32px; text-align: center; border-top: 1px solid #e2e8f0; background-color: #f8fafc; }
+      .footer p { font-size: 13px; color: #64748b; margin: 0; }
+      .footer a { color: #0f172a; text-decoration: none; font-weight: 500; }
     `
 
     const baseHtml = (bodyContent: string) => `
@@ -92,6 +93,7 @@ serve(async (req) => {
       <body>
         <div class="container">
           <div class="header">
+            <img src="https://galal-academy-membership-system.vercel.app/profile.jpg" alt="Galal Academy" class="header-img" />
             <h1>GALAL ACADEMY</h1>
           </div>
           <div class="content">

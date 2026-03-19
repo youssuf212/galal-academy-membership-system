@@ -18,6 +18,10 @@ export default function Admin() {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
 
+  // Filtering state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [tierFilter, setTierFilter] = useState('All');
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -64,6 +68,22 @@ export default function Admin() {
     await supabase.auth.signOut();
   };
 
+  const handleManualStatus = async (id: string, newStatus: string) => {
+    if (!window.confirm(`Are you sure you want to change this member's status to ${newStatus}?`)) return;
+    
+    // Optimistic UI update
+    setVerifications(prev => prev.map(v => v.id === id ? { ...v, status: newStatus } : v));
+    
+    const { error } = await supabase.from('verifications').update({ status: newStatus }).eq('id', id);
+    if (error) {
+      alert(error.message);
+      fetchDashboardData(); // revert on error
+    } else {
+      // Optional: re-fetch to ensure fresh data
+      fetchDashboardData();
+    }
+  };
+
   const onDrop = async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
@@ -80,11 +100,15 @@ export default function Admin() {
 
           const processedMembers = results.data.map((row: any) => {
              const link = row['Link to profile'] || '';
+             const joinedAtRaw = row['Member since'] || row['Update time'] || new Date().toISOString();
+             const joinedAt = new Date(joinedAtRaw);
+             
              return {
                name: row['Member']?.trim() || 'Unknown',
                youtube_handle: link ? link.split('/').pop() : 'Unknown',
                tier: row['Current level'] || 'Standard',
                status: 'active',
+               joined_at: !isNaN(joinedAt.getTime()) ? joinedAt.toISOString() : new Date().toISOString()
              };
           }).filter(m => m.name !== 'Unknown' && m.youtube_handle !== 'Unknown');
 
@@ -221,7 +245,23 @@ export default function Admin() {
     );
   }
 
-  const filteredVerifications = verifications.filter(v => v.status === activeTab);
+  const filteredVerifications = verifications.filter(v => {
+    if (v.status !== activeTab) return false;
+    
+    if (tierFilter !== 'All') {
+      const vTier = v.members?.tier || '';
+      if (!vTier.toLowerCase().includes(tierFilter.toLowerCase())) return false;
+    }
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!v.email.toLowerCase().includes(q) && !(v.members?.name || '').toLowerCase().includes(q) && !(v.youtube_handle || '').toLowerCase().includes(q)) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
 
   // --- DASHBOARD VIEW ---
   return (
@@ -323,6 +363,28 @@ export default function Admin() {
                       Rejected
                     </button>
                   </div>
+                  
+                  {/* Filters Bar */}
+                  <div className="flex flex-wrap gap-4 px-6 py-4 bg-slate-50/50 border-t border-slate-100">
+                    <input 
+                      type="text" 
+                      placeholder="Search email or name..." 
+                      className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg w-full max-w-xs outline-none focus:border-blue-500"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <select 
+                      className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-500 bg-white"
+                      value={tierFilter}
+                      onChange={(e) => setTierFilter(e.target.value)}
+                    >
+                      <option value="All">All Tiers</option>
+                      <option value="Elite">Elite</option>
+                      <option value="Platinum">Platinum</option>
+                      <option value="Gold">Gold</option>
+                      <option value="Personal Coaching">Personal Coaching</option>
+                    </select>
+                  </div>
                 </div>
                 
                 <div className="flex-1 overflow-auto">
@@ -331,8 +393,13 @@ export default function Admin() {
                       <tr>
                         <th className="px-6 py-4 font-medium text-slate-600">Email</th>
                         <th className="px-6 py-4 font-medium text-slate-600">YouTube Name</th>
-                        <th className="px-6 py-4 font-medium text-slate-600">Date Submitted</th>
-                        {activeTab === 'verified' && <th className="px-6 py-4 font-medium text-slate-600">Tier</th>}
+                        <th className="px-6 py-4 font-medium text-slate-600">Joined CSV Date</th>
+                        {activeTab === 'verified' && (
+                          <>
+                            <th className="px-6 py-4 font-medium text-slate-600">Tier</th>
+                            <th className="px-6 py-4 font-medium text-slate-600">Days Active</th>
+                          </>
+                        )}
                         <th className="px-6 py-4 font-medium text-slate-600">Actions</th>
                       </tr>
                     </thead>
@@ -351,16 +418,21 @@ export default function Admin() {
                               {req.members ? req.members.name : req.youtube_handle}
                             </td>
                             <td className="px-6 py-4 text-slate-500">
-                              {new Date(req.created_at).toLocaleDateString()}
+                              {req.members?.joined_at ? new Date(req.members.joined_at).toLocaleDateString() : new Date(req.created_at).toLocaleDateString()}
                             </td>
                             {activeTab === 'verified' && (
-                              <td className="px-6 py-4">
-                                <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
-                                  {req.members?.tier || 'Unknown'}
-                                </span>
-                              </td>
+                              <>
+                                <td className="px-6 py-4">
+                                  <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
+                                    {req.members?.tier || 'Unknown'}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-slate-600 text-sm">
+                                  {req.members?.joined_at ? Math.floor((new Date().getTime() - new Date(req.members.joined_at).getTime()) / (1000 * 3600 * 24)) : 0} days
+                                </td>
+                              </>
                             )}
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4 flex items-center gap-2">
                               <a 
                                 href={`mailto:${req.email}`}
                                 className="inline-flex items-center gap-1.5 text-slate-700 hover:text-black bg-white border border-slate-300 hover:bg-slate-50 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm"
@@ -368,6 +440,21 @@ export default function Admin() {
                                 <Mail className="w-3.5 h-3.5" />
                                 Email
                               </a>
+                              {req.status === 'verified' ? (
+                                <button 
+                                  onClick={() => handleManualStatus(req.id, 'rejected')}
+                                  className="inline-flex items-center gap-1.5 text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-red-200"
+                                >
+                                  Revoke Access
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={() => handleManualStatus(req.id, 'verified')}
+                                  className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-emerald-200"
+                                >
+                                  Approve
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))

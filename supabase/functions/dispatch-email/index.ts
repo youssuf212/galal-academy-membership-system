@@ -188,6 +188,7 @@ serve(async (req) => {
     const data = await response.json()
 
     // 4. Google Drive Integration (Elite Tiers)
+    console.log(`[Dispatch Email] Evaluating Google Drive invite... Type: ${type}, Tier: '${tier}'`)
     if (type === 'welcome') {
       const eliteTiers = [
         'Elite',
@@ -197,10 +198,15 @@ serve(async (req) => {
         'Personal Coaching ++'
       ]
 
-      if (tier && eliteTiers.includes(tier)) {
+      const normalizedTier = tier ? tier.trim() : ''
+      const isElite = eliteTiers.includes(normalizedTier)
+      console.log(`[Dispatch Email] Normalized Tier: '${normalizedTier}'. Is Elite? ${isElite}`)
+
+      if (isElite) {
         const folderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID')
+        console.log(`[Dispatch Email] GOOGLE_DRIVE_FOLDER_ID: ${folderId ? 'Found' : 'Missing'}`)
         if (folderId) {
-          console.log(`[Dispatch Email] Elite Tier detected (${tier}). Sharing Google Drive folder ${folderId} with ${email}...`)
+          console.log(`[Dispatch Email] Sharing Google Drive folder ${folderId} with ${email}...`)
           const driveRes = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}/permissions`, {
             method: 'POST',
             headers: {
@@ -215,13 +221,15 @@ serve(async (req) => {
           })
           
           if (!driveRes.ok) {
-            console.error('[Dispatch Email] Failed to invite user to Google Drive:', await driveRes.text())
+            console.error('[Dispatch Email] ERROR: Failed to invite user to Google Drive. Response status:', driveRes.status, 'Text:', await driveRes.text())
           } else {
-            console.log(`[Dispatch Email] Successfully invited ${email} to Google Drive folder!`)
+            console.log(`[Dispatch Email] SUCCESS: Invited ${email} to Google Drive folder!`)
           }
         } else {
-            console.log(`[Dispatch Email] Warning: GOOGLE_DRIVE_FOLDER_ID not set in environment. Skipping Drive invite.`)
+            console.warn(`[Dispatch Email] WARNING: GOOGLE_DRIVE_FOLDER_ID not set in environment. Skipping Drive invite.`)
         }
+      } else {
+        console.log(`[Dispatch Email] Tier '${normalizedTier}' is not in the Elite tiers list. Skipping Drive invite.`)
       }
     }
 

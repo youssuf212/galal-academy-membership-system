@@ -14,7 +14,7 @@ export default function Admin() {
   // Dashboard state
   const [members, setMembers] = useState<any[]>([]);
   const [verifications, setVerifications] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'rejected'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'rejected' | 'revoked'>('pending');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
   const [sweepStatus, setSweepStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
@@ -85,8 +85,8 @@ export default function Admin() {
     }
   };
 
-  const runLifecycleSweep = async () => {
-    if (!window.confirm("Are you sure you want to run the Lifecycle Sweep? This will immediately delete expired member Drive permissions and send automated upsell emails!")) return;
+  const runLifecycleSweep = async (isAuto = false) => {
+    if (!isAuto && !window.confirm("Are you sure you want to run the Lifecycle Sweep? This will immediately delete expired member Drive permissions and send automated upsell emails!")) return 0;
     
     setSweepStatus('processing');
     let errors = 0;
@@ -115,8 +115,8 @@ export default function Admin() {
              body: { type: 'lifecycle-day-32', email: v.email, name: v.members.name, tier: v.members.tier }
           });
           await supabase.from('members').update({ day_32_sent: true }).eq('id', v.members.id);
-          // Revoke from verified list
-          await supabase.from('verifications').update({ status: 'rejected' }).eq('id', v.id);
+          // Move to revoked status
+          await supabase.from('verifications').update({ status: 'revoked' }).eq('id', v.id);
           emailsSent++;
         } catch(e) { console.error(e); errors++; }
       }
@@ -131,6 +131,7 @@ export default function Admin() {
       alert(`Sweep completely successful! Automated ${emailsSent} lifecycle actions.`);
     }
     setTimeout(() => setSweepStatus('idle'), 5000);
+    return emailsSent;
   };
 
   const onDrop = async (acceptedFiles: File[]) => {
@@ -237,7 +238,12 @@ export default function Admin() {
           }
 
           setUploadStatus('success');
-          setUploadMessage('Successfully synced members and swept pending requests!');
+          setUploadMessage('Synced CSV! Performing auto-lifecycle check...');
+          
+          // AUTO-SYNC LIFECYCLE: Automatically run the sweep after CSV upload
+          const sweptCount = await runLifecycleSweep(true);
+          
+          setUploadMessage(`Success! Synced members and processed ${sweptCount} automated lifecycle actions.`);
           fetchDashboardData();
 
         } catch (err: any) {
@@ -400,7 +406,7 @@ export default function Admin() {
                 Run a sweeping pass across all members. Anyone exceeding 31 active days will lose Drive permissions and receive a fallback discount. Day 29+ members will get an upsell retention sequence.
               </p>
               <button
-                onClick={runLifecycleSweep}
+                onClick={() => runLifecycleSweep(false)}
                 disabled={sweepStatus === 'processing'}
                 className="w-full py-2.5 px-4 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
@@ -441,6 +447,13 @@ export default function Admin() {
                     >
                       <AlertCircle className="w-4 h-4" />
                       Rejected
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('revoked')}
+                      className={cn("px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2", activeTab === 'revoked' ? "border-slate-500 text-slate-900" : "border-transparent text-slate-500 hover:text-slate-900")}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Revoked ({verifications.filter(v => v.status === 'revoked').length})
                     </button>
                   </div>
                   

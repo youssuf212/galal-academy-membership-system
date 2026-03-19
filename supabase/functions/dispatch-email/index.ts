@@ -61,48 +61,39 @@ serve(async (req) => {
     let subject = ''
     let htmlContent = ''
 
-    const emailStyle = `
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 40px 16px; -webkit-font-smoothing: antialiased; }
-      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
-      .header { border-bottom: 1px solid #e2e8f0; padding: 32px; text-align: center; background-color: #ffffff; }
-      .header-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #ffffff; }
-      .header h1 { font-size: 20px; font-weight: 500; letter-spacing: 4px; margin: 0; color: #0f172a; text-transform: uppercase; }
-      .content { padding: 48px 40px; }
-      .h2 { font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a; }
-      .p { font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px; }
-      .strong { color: #0f172a; font-weight: 600; }
-      .details-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
-      .detail-row { display: block; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 16px; }
-      .detail-row:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
-      .detail-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px; }
-      .detail-value { font-size: 15px; color: #0f172a; font-weight: 600; display: block; }
-      .tier-badge { display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; vertical-align: middle; margin-left: 8px; }
-      .btn { display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 6px; letter-spacing: 0.5px; transition: opacity 0.2s; }
-      .footer { padding: 32px; text-align: center; border-top: 1px solid #e2e8f0; background-color: #f8fafc; }
-      .footer p { font-size: 13px; color: #64748b; margin: 0; }
-      .footer a { color: #0f172a; text-decoration: none; font-weight: 500; }
-    `
-
     const baseHtml = (bodyContent: string) => `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
+        <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <style>${emailStyle}</style>
+        <style>
+          /* Minimal responsive resets just in case */
+          body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; background-color: #f8fafc; }
+          img { border: 0; line-height: 100%; outline: none; text-decoration: none; }
+          table { border-collapse: collapse !important; }
+        </style>
       </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <img src="https://galal-academy-membership-system.vercel.app/profile.jpg" alt="Galal Academy" class="header-img" />
-            <h1>GALAL ACADEMY</h1>
+      <body style="background-color: #f8fafc; margin: 0; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          
+          <!-- Header -->
+          <div style="border-bottom: 1px solid #e2e8f0; padding: 32px; text-align: center; background-color: #ffffff;">
+            <img src="https://galal-academy-membership-system.vercel.app/profile.jpg" alt="Galal Academy" width="80" height="80" style="display: block; width: 80px; height: 80px; border-radius: 50%; max-width: 80px; max-height: 80px; margin: 0 auto 16px auto; border: 2px solid #e2e8f0; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+            <h1 style="font-size: 20px; font-weight: 500; letter-spacing: 4px; margin: 0; color: #0f172a; text-transform: uppercase;">GALAL ACADEMY</h1>
           </div>
-          <div class="content">
+          
+          <!-- Content -->
+          <div style="padding: 48px 40px;">
             ${bodyContent}
           </div>
-          <div class="footer">
-            <p>Galal Academy Exclusive Membership</p>
-            <p style="margin-top: 8px;">Support: <a href="mailto:agytmembers@gmail.com">agytmembers@gmail.com</a></p>
+          
+          <!-- Footer -->
+          <div style="padding: 32px; text-align: center; border-top: 1px solid #e2e8f0; background-color: #f8fafc;">
+            <p style="font-size: 13px; color: #64748b; margin: 0;">Galal Academy Exclusive Membership</p>
+            <p style="margin-top: 8px; font-size: 13px; color: #64748b;">Support: <a href="mailto:agytmembers@gmail.com" style="color: #0f172a; text-decoration: none; font-weight: 500;">agytmembers@gmail.com</a></p>
           </div>
+          
         </div>
       </body>
       </html>
@@ -111,69 +102,69 @@ serve(async (req) => {
     if (type === 'welcome') {
       subject = 'Welcome to Galal Academy Premium'
       htmlContent = baseHtml(`
-        <h2 class="h2">Welcome, ${name}.</h2>
-        <p class="p">Your exclusive membership access has been successfully verified and provisioned. You now have full access to our private infrastructure.</p>
+        <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">Welcome, ${name}.</h2>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Your exclusive membership access has been successfully verified and provisioned. You now have full access to our private infrastructure.</p>
         
-        <div class="details-box">
-          <div class="detail-row">
-            <span class="detail-label">Membership Tier</span>
-            <span class="detail-value">${tier} <span class="tier-badge">Active</span></span>
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+          <div style="display: block; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 16px;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Membership Tier</span>
+            <strong style="font-size: 15px; color: #0f172a; font-weight: 600; display: block;">${tier} <span style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; vertical-align: middle; margin-left: 8px;">Active</span></strong>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">Joined Date</span>
-            <span class="detail-value">${join_date || 'N/A'}</span>
+          <div style="display: block; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 16px;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Joined Date</span>
+            <strong style="font-size: 15px; color: #0f172a; font-weight: 600; display: block;">${join_date || 'N/A'}</strong>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">Next Renewal / Cycle</span>
-            <span class="detail-value">${renewal_date || 'N/A'}</span>
+          <div style="display: block;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Next Renewal / Cycle</span>
+            <strong style="font-size: 15px; color: #0f172a; font-weight: 600; display: block;">${renewal_date || 'N/A'}</strong>
           </div>
         </div>
         
-        <p class="p">You will shortly receive separate invitations linking your email (<span class="strong">${email}</span>) to our private Slack community and Google Drive repositories. Please accept those invitations to sync your workspace.</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">You will shortly receive separate invitations linking your email (<strong style="color: #0f172a; font-weight: 600;">${email}</strong>) to our private Slack community and Google Drive repositories. Please accept those invitations to sync your workspace.</p>
         
         <div style="text-align: center; margin-top: 40px;">
-          <a href="#" class="btn">View Dashboard</a>
+          <a href="#" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 6px; letter-spacing: 0.5px;">View Dashboard</a>
         </div>
       `)
     } else if (type === 'rejected') {
       subject = 'Action Required: Unverified Membership'
       htmlContent = baseHtml(`
-        <h2 class="h2">Priority Notice</h2>
-        <p class="p">Hello ${name || 'there'},</p>
-        <p class="p">We received your verification request, but unfortunately, we could not locate an active membership matching your profile in our latest database sync.</p>
+        <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">Priority Notice</h2>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 16px;">Hello ${name || 'there'},</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">We received your verification request, but unfortunately, we could not locate an active membership matching your profile in our latest database sync.</p>
         
-        <div class="details-box">
-          <div class="detail-row">
-            <span class="detail-label">Status</span>
-            <span class="detail-value" style="color: #ef4444;">Unverified</span>
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+          <div style="display: block; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 16px;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Status</span>
+            <strong style="font-size: 15px; color: #ef4444; font-weight: 600; display: block;">Unverified</strong>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">Profile Submitted</span>
-            <span class="detail-value">${name || 'N/A'}</span>
+          <div style="display: block;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Profile Submitted</span>
+            <strong style="font-size: 15px; color: #0f172a; font-weight: 600; display: block;">${name || 'N/A'}</strong>
           </div>
         </div>
 
-        <p class="p">If you recently joined on YouTube, please allow up to 24 hours for our secure database to sync. If you haven't joined yet, please secure your membership directly on our channel.</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">If you recently joined on YouTube, please allow up to 24 hours for our secure database to sync. If you haven't joined yet, please secure your membership directly on our channel.</p>
       `)
     } else if (type === 'pending') {
       subject = 'Membership Verification Pending'
       htmlContent = baseHtml(`
-        <h2 class="h2">Verification Initiated</h2>
-        <p class="p">Hello ${name || 'there'},</p>
-        <p class="p">Your verification request has been successfully submitted to our system and is currently pending review.</p>
+        <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">Verification Initiated</h2>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 16px;">Hello ${name || 'there'},</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Your verification request has been successfully submitted to our system and is currently pending review.</p>
         
-        <div class="details-box">
-          <div class="detail-row">
-            <span class="detail-label">Current Status</span>
-            <span class="detail-value" style="color: #eab308;">Pending Queue</span>
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+          <div style="display: block; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 16px;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Current Status</span>
+            <strong style="font-size: 15px; color: #eab308; font-weight: 600; display: block;">Pending Queue</strong>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">Email Attached</span>
-            <span class="detail-value">${email}</span>
+          <div style="display: block;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Email Attached</span>
+            <strong style="font-size: 15px; color: #0f172a; font-weight: 600; display: block;">${email}</strong>
           </div>
         </div>
 
-        <p class="p">Our system aligns with YouTube records periodically. You will receive an automated follow-up email precisely when your membership status is confirmed and your access channels are opened.</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Our system aligns with YouTube records periodically. You will receive an automated follow-up email precisely when your membership status is confirmed and your access channels are opened.</p>
       `)
     }
 

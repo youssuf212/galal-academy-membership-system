@@ -100,7 +100,7 @@ export default function Admin() {
 
           const processedMembers = results.data.map((row: any) => {
              const link = row['Link to profile'] || '';
-             const joinedAtRaw = row['Member since'] || row['Update time'] || new Date().toISOString();
+             const joinedAtRaw = row['Last update timestamp'] || row['Member since'] || row['Update time'] || new Date().toISOString();
              const joinedAt = new Date(joinedAtRaw);
              
              return {

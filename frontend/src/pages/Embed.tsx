@@ -16,6 +16,13 @@ export default function Embed() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.youtubeName.trim().startsWith('@')) {
+      setErrorMessage("Please type your channel name correctly so we could give you the right access");
+      setStatus('error');
+      return;
+    }
+
     setStatus('loading');
     setErrorMessage('');
 

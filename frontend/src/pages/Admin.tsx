@@ -384,7 +384,7 @@ export default function Admin() {
   // --- DASHBOARD VIEW ---
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 p-8 font-sans">
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-[98%] 2xl:max-w-[1600px] mx-auto space-y-8">
         
         {/* Header */}
         <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -402,7 +402,7 @@ export default function Admin() {
         </div>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           
           {/* Upload Widget */}
           <div className="lg:col-span-1 space-y-4">
@@ -472,8 +472,8 @@ export default function Admin() {
           </div>
 
           {/* Verification Table */}
-          <div className="lg:col-span-2">
-             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
+          <div className="lg:col-span-3">
+             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-200px)] min-h-[600px]">
                 <div className="border-b border-slate-200">
                   <div className="flex gap-4 px-6 pt-4">
                     <button 

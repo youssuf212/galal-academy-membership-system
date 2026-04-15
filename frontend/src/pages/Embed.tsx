@@ -14,6 +14,7 @@ export default function Embed() {
   const [memberTier, setMemberTier] = useState('');
   const [showHelp, setShowHelp] = useState(false);
   const [confirmName, setConfirmName] = useState(false);
+  const [handleWarningIgnored, setHandleWarningIgnored] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,9 +26,10 @@ export default function Embed() {
     }
 
     const trimmedName = formData.youtubeName.trim();
-    if (!trimmedName.includes(' ') && trimmedName === trimmedName.toLowerCase()) {
-      setErrorMessage("It looks like you typed a handle. Please type your exact Channel Name (which usually includes spaces and capital letters) as it appears on your profile.");
+    if (!trimmedName.includes(' ') && trimmedName === trimmedName.toLowerCase() && !handleWarningIgnored) {
+      setErrorMessage("It looks like you typed a handle. Please type your exact Channel Name (which usually includes spaces and capital letters) as it appears on your profile. If you are SURE this is your exact channel name, click Verify Membership again to submit anyway.");
       setStatus('error');
+      setHandleWarningIgnored(true);
       return;
     }
 
@@ -224,7 +226,11 @@ export default function Embed() {
               type="text"
               required
               value={formData.youtubeName}
-              onChange={(e) => setFormData(prev => ({ ...prev, youtubeName: e.target.value }))}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, youtubeName: e.target.value }));
+                setHandleWarningIgnored(false);
+                if (status === 'error') setStatus('idle');
+              }}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 text-slate-900 transition-colors"
               placeholder="e.g. Galal Academy"
             />

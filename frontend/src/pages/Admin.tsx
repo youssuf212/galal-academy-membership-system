@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import { LogOut, UploadCloud, CheckCircle2, AlertCircle, Loader2, Clock, Mail } from 'lucide-react';
+import { LogOut, UploadCloud, CheckCircle2, AlertCircle, Loader2, Clock, Mail, Edit3, Trash2, Send, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Admin() {
@@ -22,6 +22,12 @@ export default function Admin() {
   // Filtering state
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState('All');
+
+  // New action states
+  const [customEmailModal, setCustomEmailModal] = useState<{ isOpen: boolean, req: any }>({ isOpen: false, req: null });
+  const [customEmailSubject, setCustomEmailSubject] = useState('');
+  const [customEmailBody, setCustomEmailBody] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -82,6 +88,49 @@ export default function Admin() {
     } else {
       // Optional: re-fetch to ensure fresh data
       fetchDashboardData();
+    }
+  };
+
+  const handleDeleteRequest = async (id: string) => {
+    if (!window.confirm("Are you sure you want to completely delete this request? This cannot be undone.")) return;
+    const { error } = await supabase.from('verifications').delete().eq('id', id);
+    if (error) alert(error.message);
+    else fetchDashboardData();
+  };
+
+  const handleEditName = async (id: string, currentName: string) => {
+    const newName = window.prompt("Enter the correct YouTube Channel Name:", currentName);
+    if (newName && newName.trim() !== currentName) {
+      const { error } = await supabase.from('verifications').update({ youtube_handle: newName.trim() }).eq('id', id);
+      if (error) alert(error.message);
+      else fetchDashboardData();
+    }
+  };
+
+  const handleSendCustomEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customEmailModal.req) return;
+    
+    setSendingEmail(true);
+    try {
+      await supabase.functions.invoke('dispatch-email', {
+        body: { 
+          type: 'custom', 
+          email: customEmailModal.req.email, 
+          name: customEmailModal.req.members?.name || customEmailModal.req.youtube_handle,
+          customSubject: customEmailSubject,
+          customBody: customEmailBody
+        }
+      });
+      alert('Email sent successfully!');
+      setCustomEmailModal({ isOpen: false, req: null });
+      setCustomEmailSubject('');
+      setCustomEmailBody('');
+    } catch (err: any) {
+      console.error(err);
+      alert('Failed to send email: ' + err.message);
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -525,29 +574,52 @@ export default function Admin() {
                                 </td>
                               </>
                             )}
-                            <td className="px-6 py-4 flex items-center gap-2">
-                              <a 
-                                href={`mailto:${req.email}`}
-                                className="inline-flex items-center gap-1.5 text-slate-700 hover:text-black bg-white border border-slate-300 hover:bg-slate-50 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm"
-                              >
-                                <Mail className="w-3.5 h-3.5" />
-                                Email
-                              </a>
-                              {req.status === 'verified' ? (
+                            <td className="px-6 py-4 flex flex-col gap-2">
+                              <div className="flex items-center gap-2">
                                 <button 
-                                  onClick={() => handleManualStatus(req.id, 'rejected')}
-                                  className="inline-flex items-center gap-1.5 text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-red-200"
+                                  onClick={() => {
+                                    setCustomEmailModal({ isOpen: true, req });
+                                  }}
+                                  className="inline-flex items-center gap-1.5 text-slate-700 hover:text-blue-700 bg-white border border-slate-300 hover:bg-slate-50 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm"
+                                  title="Send Custom Email"
                                 >
-                                  Revoke Access
+                                  <Send className="w-3.5 h-3.5" />
+                                  Mail
                                 </button>
-                              ) : (
-                                <button 
-                                  onClick={() => handleManualStatus(req.id, 'verified')}
-                                  className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-emerald-200"
+                                {req.status === 'verified' ? (
+                                  <button 
+                                    onClick={() => handleManualStatus(req.id, 'rejected')}
+                                    className="inline-flex items-center gap-1.5 text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-red-200"
+                                  >
+                                    Revoke
+                                  </button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleManualStatus(req.id, 'verified')}
+                                    className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-emerald-200"
+                                  >
+                                    Approve
+                                  </button>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleEditName(req.id, req.youtube_handle)}
+                                  className="inline-flex items-center gap-1.5 text-slate-600 hover:text-black bg-slate-50 border border-slate-200 hover:border-slate-300 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm"
+                                  title="Edit Name"
                                 >
-                                  Approve
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  Edit
                                 </button>
-                              )}
+                                <button
+                                  onClick={() => handleDeleteRequest(req.id)}
+                                  className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800 bg-red-50 border border-red-100 hover:border-red-200 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm"
+                                  title="Delete Request"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Del
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -560,6 +632,73 @@ export default function Admin() {
 
         </div>
       </div>
+
+      {/* Custom Email Modal */}
+      {customEmailModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h3 className="text-lg font-semibold text-slate-900">Send Custom Email</h3>
+              <button 
+                onClick={() => setCustomEmailModal({ isOpen: false, req: null })}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSendCustomEmail} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">To</label>
+                <input 
+                  type="text" 
+                  disabled 
+                  value={customEmailModal.req?.email || ''} 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                <input 
+                  type="text" 
+                  required
+                  value={customEmailSubject} 
+                  onChange={(e) => setCustomEmailSubject(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2 outline-none focus:border-blue-500 text-slate-900"
+                  placeholder="e.g. Action Required: Please correct your Channel Name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Message Body (HTML supported)</label>
+                <textarea 
+                  required
+                  rows={6}
+                  value={customEmailBody}
+                  onChange={(e) => setCustomEmailBody(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-blue-500 text-slate-900"
+                  placeholder="<p>Write your message here. You can use basic HTML tags like <strong> or <br/>.</p>"
+                />
+              </div>
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCustomEmailModal({ isOpen: false, req: null })}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingEmail}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                >
+                  {sendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Send Email
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -56,7 +56,7 @@ serve(async (req) => {
   try {
     const rawBody = await req.text()
     console.log('[Dispatch Email] Received POST Payload:', rawBody)
-    const { type, email, name, tier, join_date, renewal_date } = JSON.parse(rawBody)
+    const { type, email, name, tier, join_date, renewal_date, customSubject, customBody } = JSON.parse(rawBody)
 
     let subject = ''
     let htmlContent = ''
@@ -269,6 +269,9 @@ serve(async (req) => {
           <p style="margin: 0 0 16px 0; font-size: 14px; color: #15803d; line-height: 1.5;">We'd love to have you back! If you decide to rejoin us today at the <strong>${nextTier}</strong> tier, please respond to this email for a special <strong>10% Discount</strong> on your upgraded membership!</p>
         </div>
       `)
+    } else if (type === 'custom') {
+      subject = customSubject || 'Message from Galal Academy'
+      htmlContent = baseHtml(customBody || '<p>Hello!</p>')
     }
 
     // 1. Refresh Google OAuth Token

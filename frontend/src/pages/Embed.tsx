@@ -13,12 +13,20 @@ export default function Embed() {
   const [errorMessage, setErrorMessage] = useState('');
   const [memberTier, setMemberTier] = useState('');
   const [showHelp, setShowHelp] = useState(false);
+  const [confirmName, setConfirmName] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.youtubeName.trim().startsWith('@')) {
-      setErrorMessage("Please type your channel name correctly so we could give you the right access");
+      setErrorMessage("Please type your channel name exactly, not your @handle.");
+      setStatus('error');
+      return;
+    }
+
+    const trimmedName = formData.youtubeName.trim();
+    if (!trimmedName.includes(' ') && trimmedName === trimmedName.toLowerCase()) {
+      setErrorMessage("It looks like you typed a handle. Please type your exact Channel Name (which usually includes spaces and capital letters) as it appears on your profile.");
       setStatus('error');
       return;
     }
@@ -263,12 +271,25 @@ export default function Embed() {
             </div>
           )}
 
+          <label className="flex items-start gap-2 cursor-pointer mt-4 mb-2">
+            <input 
+              type="checkbox" 
+              className="mt-1 w-4 h-4 rounded text-blue-600"
+              checked={confirmName}
+              onChange={(e) => setConfirmName(e.target.checked)}
+              required
+            />
+            <span className="text-sm text-slate-600">
+              I confirm I have entered my <strong>exact Channel Name</strong> as it appears on my profile, not my handle.
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={status === 'loading'}
+            disabled={status === 'loading' || !confirmName}
             className={cn(
               "w-full bg-black hover:bg-slate-800 text-white font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2",
-              status === 'loading' && "opacity-70 cursor-not-allowed"
+              (status === 'loading' || !confirmName) && "opacity-70 cursor-not-allowed"
             )}
           >
             {status === 'loading' ? (

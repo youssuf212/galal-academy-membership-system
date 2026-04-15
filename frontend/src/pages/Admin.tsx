@@ -668,14 +668,14 @@ export default function Admin() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Message Body (HTML supported)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Message Body</label>
                 <textarea 
                   required
                   rows={6}
                   value={customEmailBody}
                   onChange={(e) => setCustomEmailBody(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-blue-500 text-slate-900"
-                  placeholder="<p>Write your message here. You can use basic HTML tags like <strong> or <br/>.</p>"
+                  placeholder="Just type your message normally. Paragraphs and spacing will be automatically matched to the premium template."
                 />
               </div>
               <div className="pt-4 flex justify-end gap-3">

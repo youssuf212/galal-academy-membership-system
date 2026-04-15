@@ -274,7 +274,17 @@ serve(async (req) => {
       `)
     } else if (type === 'custom') {
       subject = customSubject || 'Message from Galal Academy'
-      htmlContent = baseHtml(customBody || '<p>Hello!</p>')
+      
+      // Map newlines from the textarea into styled paragraphs or breaklines
+      const formattedText = (customBody || '')
+        .split('\n')
+        .map((line: string) => line.trim() ? `<p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 16px;">${line}</p>` : '<br/>')
+        .join('');
+
+      htmlContent = baseHtml(`
+        <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">${subject}</h2>
+        ${formattedText}
+      `)
     }
 
     // 1. Refresh Google OAuth Token

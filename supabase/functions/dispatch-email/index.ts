@@ -28,10 +28,13 @@ async function getAccessToken(): Promise<string> {
 }
 
 function createBase64Email(to: string, subject: string, htmlBody: string): string {
+  // Properly encode the subject in case of Arabic/non-ASCII characters
+  const encodedSubject = `=?utf-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`
+
   // Construct a raw MIME email string
   const emailLines = [
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodedSubject}`,
     `MIME-Version: 1.0`,
     `Content-Type: text/html; charset=utf-8`,
     '',

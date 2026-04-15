@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import { LogOut, UploadCloud, CheckCircle2, AlertCircle, Loader2, Clock, Mail, Edit3, Trash2, Send, X } from 'lucide-react';
+import { LogOut, UploadCloud, CheckCircle2, AlertCircle, Loader2, Clock, Edit3, Trash2, Send, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Admin() {

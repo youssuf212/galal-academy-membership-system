@@ -156,19 +156,6 @@ export default function Admin() {
           emailsSent++;
         } catch(e) { console.error(e); errors++; }
       }
-      
-      // Day 32+ Expiry & Revocation
-      if (daysActive >= 32 && !v.members.day_32_sent) {
-        try {
-          await supabase.functions.invoke('dispatch-email', {
-             body: { type: 'lifecycle-day-32', email: v.email, name: v.members.name, tier: v.members.tier }
-          });
-          await supabase.from('members').update({ day_32_sent: true }).eq('id', v.members.id);
-          // Move to revoked status
-          await supabase.from('verifications').update({ status: 'revoked' }).eq('id', v.id);
-          emailsSent++;
-        } catch(e) { console.error(e); errors++; }
-      }
     }
     
     fetchDashboardData();
@@ -232,47 +219,34 @@ export default function Admin() {
             if (pending && pending.length > 0) {
               for (const req of pending) {
                 // req.youtube_handle stores their submitted YouTube Name right now
-                const match = freshMembers.find(m => m.name.toLowerCase() === req.youtube_handle.toLowerCase());
+                const match = processedMembers.find((m: any) => m.name.toLowerCase() === req.youtube_handle.toLowerCase());
+                const dbMatch = match ? freshMembers.find(m => m.name.toLowerCase() === req.youtube_handle.toLowerCase()) : null;
                 
-                if (match) {
-                  // Check if the timestamp in this CSV is actually fresh
-                  const daysActive = Math.floor((new Date().getTime() - new Date(match.joined_at).getTime()) / (1000 * 3600 * 24));
+                if (dbMatch) {
+                  // Fresh payment!
+                  await supabase.from('verifications').update({ 
+                    status: 'verified', 
+                    member_id: dbMatch.id,
+                    verified_at: new Date().toISOString()
+                  }).eq('id', req.id);
                   
-                  if (daysActive > 31) {
-                    // They match the handle, but their payment is expired/not renewed.
-                    await supabase.from('verifications').update({ 
-                      status: 'rejected' 
-                    }).eq('id', req.id);
-                    
-                    supabase.functions.invoke('dispatch-email', {
-                      body: { type: 'expired', email: req.email, name: req.youtube_handle }
-                    }).catch(console.error);
-                  } else {
-                    // Fresh payment!
-                    await supabase.from('verifications').update({ 
-                      status: 'verified', 
-                      member_id: match.id,
-                      verified_at: new Date().toISOString()
-                    }).eq('id', req.id);
-                    
-                    const joinDateObj = new Date(match.joined_at || Date.now());
-                    const renewalDateObj = new Date(match.joined_at || Date.now());
-                    renewalDateObj.setMonth(renewalDateObj.getMonth() + 1);
+                  const joinDateObj = new Date(dbMatch.joined_at || Date.now());
+                  const renewalDateObj = new Date(dbMatch.joined_at || Date.now());
+                  renewalDateObj.setMonth(renewalDateObj.getMonth() + 1);
 
-                    // Trigger welcome email
-                    supabase.functions.invoke('dispatch-email', {
-                      body: { 
-                        type: 'welcome', 
-                        email: req.email, 
-                        name: match.name, 
-                        tier: match.tier,
-                        join_date: joinDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                        renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-                      }
-                    }).catch(console.error);
-                  }
+                  // Trigger welcome email
+                  supabase.functions.invoke('dispatch-email', {
+                    body: { 
+                      type: 'welcome', 
+                      email: req.email, 
+                      name: dbMatch.name, 
+                      tier: dbMatch.tier,
+                      join_date: joinDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                      renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                    }
+                  }).catch(console.error);
                 } else {
-                  // Mark as rejected since they aren't in the new CSV either
+                  // Mark as rejected since they aren't in the new CSV
                   await supabase.from('verifications').update({ 
                     status: 'rejected' 
                   }).eq('id', req.id);
@@ -282,6 +256,25 @@ export default function Admin() {
                     body: { type: 'rejected', email: req.email, name: req.youtube_handle }
                   }).catch(console.error);
                 }
+              }
+            }
+
+            // Revoke active verifications if they are not in the uploaded CSV
+            const { data: verifiedReqs } = await supabase
+              .from('verifications')
+              .select('*, members(*)')
+              .eq('status', 'verified');
+              
+            if (verifiedReqs && verifiedReqs.length > 0) {
+              for (const req of verifiedReqs) {
+                 const nameToCheck = req.members?.name || req.youtube_handle;
+                 const inCsv = processedMembers.some((m: any) => m.name.toLowerCase() === nameToCheck.toLowerCase());
+                 if (!inCsv) {
+                   await supabase.from('verifications').update({ status: 'revoked' }).eq('id', req.id);
+                   supabase.functions.invoke('dispatch-email', {
+                      body: { type: 'lifecycle-day-32', email: req.email, name: nameToCheck, tier: req.members?.tier || 'Standard' }
+                   }).catch(console.error);
+                 }
               }
             }
           }

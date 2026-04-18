@@ -1,0 +1,21 @@
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+frontend/.env
+supabase/.env
+
+# Google OAuth Secrets
+client_secret_*.json
+
+# Supabase Local
+supabase/.temp/
+
+# Node_modules (if applicable)
+node_modules/
+
+# OS generated files
+.DS_Store
+Thumbs.db

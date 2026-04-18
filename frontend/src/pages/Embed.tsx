@@ -7,7 +7,8 @@ export default function Embed() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    youtubeName: ''
+    youtubeName: '',
+    promoCode: ''
   });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success_verified' | 'success_pending' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -58,6 +59,7 @@ export default function Embed() {
               member_id: member.id,
               email: formData.email,
               youtube_handle: formData.youtubeName,
+              promo_code: formData.promoCode || null,
               status: 'verified',
               verified_at: new Date().toISOString()
             }]);
@@ -95,6 +97,7 @@ export default function Embed() {
               member_id: member.id,
               email: formData.email,
               youtube_handle: formData.youtubeName,
+              promo_code: formData.promoCode || null,
               status: 'pending'
             }]);
           
@@ -119,6 +122,7 @@ export default function Embed() {
           .insert([{
             email: formData.email,
             youtube_handle: formData.youtubeName,
+            promo_code: formData.promoCode || null,
             status: 'pending'
           }]);
         
@@ -269,6 +273,17 @@ export default function Embed() {
                 </div>
               </div>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Promo Code (Optional)</label>
+            <input
+              type="text"
+              value={formData.promoCode}
+              onChange={(e) => setFormData(prev => ({ ...prev, promoCode: e.target.value.toUpperCase() }))}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 text-slate-900 transition-colors uppercase"
+              placeholder="e.g. NAME-XXX"
+            />
           </div>
 
           {status === 'error' && (

@@ -59,7 +59,7 @@ serve(async (req) => {
   try {
     const rawBody = await req.text()
     console.log('[Dispatch Email] Received POST Payload:', rawBody)
-    const { type, email, name, tier, join_date, renewal_date, customSubject, customBody } = JSON.parse(rawBody)
+    const { type, email, name, tier, join_date, renewal_date, customSubject, customBody, promo_code, elite_promo_redeemed } = JSON.parse(rawBody)
 
     let subject = ''
     let htmlContent = ''
@@ -139,6 +139,24 @@ serve(async (req) => {
         </div>
       ` : ''
 
+      const goldPromoBlock = (isGold && promo_code) ? `
+        <div style="margin-top: 32px; padding: 24px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #b45309;">A Special Offer Just For You</h3>
+          <p style="margin: 0 0 16px 0; font-size: 14px; color: #92400e; line-height: 1.5;">Hello there, this is Joe, Head of Galal Academy Support team. We are doing something very special for you today!</p>
+          <p style="margin: 0 0 16px 0; font-size: 14px; color: #92400e; line-height: 1.5;">Since you reached the Gold tier, we want to highlight why upgrading to Elite membership is absolutely worth it. If you upgrade to Elite, we will give you a <strong>25% "cashback"</strong> in the form of an extra week of Elite membership access to documents entirely for free... specifically, you'll get it when you eventually cancel your membership.</p>
+          <p style="margin: 0 0 16px 0; font-size: 14px; color: #92400e; line-height: 1.5;">Your own personal coupon code is: <strong>${promo_code}</strong></p>
+          <p style="margin: 0 0 16px 0; font-size: 14px; color: #92400e; line-height: 1.5;">This coupon code is incredibly special and can only be used once. Please don't share it with anyone else! This code will be valid for exactly <strong>14 days</strong> from receiving this email. To use it, simply upgrade to the Elite tier on YouTube, then resubmit your membership request in our form and enter this code.</p>
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #92400e;">— Joe, Head of Support</p>
+        </div>
+      ` : ''
+
+      const eliteRedeemedBlock = (isElite && elite_promo_redeemed) ? `
+        <div style="margin-top: 32px; padding: 24px; background-color: #fdf4ff; border: 1px solid #fae8ff; border-radius: 8px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #a21caf;">Promo Code Successfully Redeemed!</h3>
+          <p style="margin: 0 0 16px 0; font-size: 14px; color: #86198f; line-height: 1.5;">You successfully used your 25% cashback promo code! This guarantees you one extra free week of premium document access seamlessly after your membership eventually ends.</p>
+        </div>
+      ` : ''
+
       // Confirmation text varies by tier
       let confirmationText: string
       if (isGold) {
@@ -174,6 +192,8 @@ serve(async (req) => {
         
         ${slackInviteBlock}
         ${coachingBlock}
+        ${goldPromoBlock}
+        ${eliteRedeemedBlock}
       `)
     } else if (type === 'rejected') {
       subject = 'Action Required: Unverified Membership'
@@ -261,9 +281,19 @@ serve(async (req) => {
       }
       const nextTier = upsellOffers[tier?.toLowerCase() || ''] || 'a higher tier'
 
+      let expiredMessage = '';
+      if (elite_promo_redeemed) {
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        const dateString = nextWeek.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        expiredMessage = `Hello ${name}, we are sorry to see you go! However, as a reminder, because you successfully redeemed your 25% "cashback" promo code, you can continue to enjoy your Elite document access entirely for free until <strong>${dateString}</strong>.`
+      } else {
+        expiredMessage = `Hello ${name}, your 30-day membership cycle has officially expired, and your <strong>Google Drive access has been automatically revoked.</strong>`
+      }
+
       htmlContent = baseHtml(`
         <h2 style="font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 24px; color: #0f172a;">Membership Expired</h2>
-        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">Hello ${name}, your 30-day membership cycle has officially expired, and your <strong>Google Drive access has been automatically revoked.</strong></p>
+        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">${expiredMessage}</p>
         
         <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">We're always striving to improve, and we'd love to hear your feedback on why you decided not to renew.</p>
 
@@ -346,7 +376,7 @@ serve(async (req) => {
       }
     } else if (type === 'lifecycle-day-32') {
       const folderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID')
-      if (folderId) {
+      if (folderId && !elite_promo_redeemed) {
         console.log(`[Dispatch Email] Handling Expiry: Revoking Google Drive access for ${email}...`)
         
         // Step 1: List permissions to find the permission ID targeting this email

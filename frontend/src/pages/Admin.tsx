@@ -230,6 +230,26 @@ export default function Admin() {
                     verified_at: new Date().toISOString()
                   }).eq('id', req.id);
                   
+                  let promoCode = dbMatch.promo_code;
+                  let elitePromoRedeemed = dbMatch.elite_promo_redeemed;
+
+                  if (dbMatch.tier.toLowerCase().includes('gold') && !promoCode) {
+                     const nameParts = dbMatch.name.split(' ');
+                     let initials = nameParts.length >= 2 
+                        ? (nameParts[0].substring(0, 2) + nameParts[1].substring(0, 2)).toUpperCase() 
+                        : dbMatch.name.substring(0, 4).toUpperCase();
+                     promoCode = `${initials}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+                     await supabase.from('members').update({ promo_code: promoCode }).eq('id', dbMatch.id);
+                  }
+
+                  if (dbMatch.tier.toLowerCase().includes('elite') && req.promo_code && !elitePromoRedeemed) {
+                     const { data: matchedMember } = await supabase.from('members').select('id').eq('promo_code', req.promo_code).single();
+                     if (matchedMember) {
+                        await supabase.from('members').update({ elite_promo_redeemed: true }).eq('id', dbMatch.id);
+                        elitePromoRedeemed = true;
+                     }
+                  }
+
                   const joinDateObj = new Date(dbMatch.joined_at || Date.now());
                   const renewalDateObj = new Date(dbMatch.joined_at || Date.now());
                   renewalDateObj.setMonth(renewalDateObj.getMonth() + 1);
@@ -242,7 +262,9 @@ export default function Admin() {
                       name: dbMatch.name, 
                       tier: dbMatch.tier,
                       join_date: joinDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                      renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                      renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                      promo_code: promoCode,
+                      elite_promo_redeemed: elitePromoRedeemed
                     }
                   }).catch(console.error);
                 } else {
@@ -272,7 +294,13 @@ export default function Admin() {
                  if (!inCsv) {
                    await supabase.from('verifications').update({ status: 'revoked' }).eq('id', req.id);
                    supabase.functions.invoke('dispatch-email', {
-                      body: { type: 'lifecycle-day-32', email: req.email, name: nameToCheck, tier: req.members?.tier || 'Standard' }
+                      body: { 
+                        type: 'lifecycle-day-32', 
+                        email: req.email, 
+                        name: nameToCheck, 
+                        tier: req.members?.tier || 'Standard',
+                        elite_promo_redeemed: req.members?.elite_promo_redeemed
+                      }
                    }).catch(console.error);
                  }
               }

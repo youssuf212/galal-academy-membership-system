@@ -7,7 +7,9 @@ CREATE TABLE public.members (
     status TEXT NOT NULL DEFAULT 'active',
     joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     day_29_sent BOOLEAN DEFAULT FALSE,
-    day_32_sent BOOLEAN DEFAULT FALSE
+    day_32_sent BOOLEAN DEFAULT FALSE,
+    promo_code TEXT UNIQUE,
+    elite_promo_redeemed BOOLEAN DEFAULT FALSE
 );
 
 -- Create verifications table
@@ -16,6 +18,7 @@ CREATE TABLE public.verifications (
     member_id UUID REFERENCES public.members(id) ON DELETE SET NULL,
     email TEXT NOT NULL,
     youtube_handle TEXT NOT NULL,
+    promo_code TEXT,
     status TEXT NOT NULL DEFAULT 'pending',
     verified_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

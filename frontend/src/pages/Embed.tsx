@@ -71,6 +71,26 @@ export default function Embed() {
           setMemberTier(member.tier);
           setStatus('success_verified');
           
+          let finalPromoCode = member.promo_code;
+          let elitePromoRedeemed = member.elite_promo_redeemed;
+
+          if (member.tier.toLowerCase().includes('gold') && !finalPromoCode) {
+             const nameParts = member.name.split(' ');
+             let initials = nameParts.length >= 2 
+                ? (nameParts[0].substring(0, 2) + nameParts[1].substring(0, 2)).toUpperCase() 
+                : member.name.substring(0, 4).toUpperCase();
+             finalPromoCode = `${initials}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+             await supabase.from('members').update({ promo_code: finalPromoCode }).eq('id', member.id);
+          }
+
+          if (member.tier.toLowerCase().includes('elite') && formData.promoCode && !elitePromoRedeemed) {
+             const { data: matchedMember } = await supabase.from('members').select('id').eq('promo_code', formData.promoCode).single();
+             if (matchedMember) {
+                await supabase.from('members').update({ elite_promo_redeemed: true }).eq('id', member.id);
+                elitePromoRedeemed = true;
+             }
+          }
+
           const joinDateObj = new Date(member.joined_at || Date.now());
           const renewalDateObj = new Date(member.joined_at || Date.now());
           renewalDateObj.setMonth(renewalDateObj.getMonth() + 1);
@@ -83,7 +103,9 @@ export default function Embed() {
               name: member.name, 
               tier: member.tier,
               join_date: joinDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-              renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+              renewal_date: renewalDateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+              promo_code: finalPromoCode,
+              elite_promo_redeemed: elitePromoRedeemed
             }
           }).catch(console.error);
         } else {

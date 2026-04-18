@@ -72,7 +72,7 @@ export default function Embed() {
 
         const isUpgradingToElite = formData.promoCode && !member.tier.toLowerCase().includes('elite');
 
-        if (daysSinceUpdate <= 31 && !isUpgradingToElite) {
+        if (member.status === 'active' && daysSinceUpdate <= 31 && !isUpgradingToElite) {
           // FRESH MEMBERSHIP (0–31 days) — verify immediately
           await saveVerification({
             member_id: member.id,

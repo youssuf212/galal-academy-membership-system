@@ -204,6 +204,17 @@ export default function Admin() {
             .upsert(processedMembers, { onConflict: 'youtube_handle' });
 
           if (upsertError) throw upsertError;
+
+          // 1.5 Mark all members not in CSV as expired to close loopholes
+          const inCsvHandles = processedMembers.map((m: any) => m.youtube_handle.toLowerCase());
+          const { data: allMembers } = await supabase.from('members').select('id, youtube_handle, status');
+          if (allMembers) {
+            const expiredMembers = allMembers.filter(m => !inCsvHandles.includes(m.youtube_handle.toLowerCase()) && m.status !== 'expired');
+            for (const expM of expiredMembers) {
+              await supabase.from('members').update({ status: 'expired' }).eq('id', expM.id);
+            }
+          }
+
           setUploadMessage('Members synced. Checking pending requests...');
 
           // Fetch fresh members

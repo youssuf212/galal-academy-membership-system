@@ -141,12 +141,27 @@ serve(async (req) => {
 
       const goldPromoBlock = (isGold && promo_code) ? `
         <div style="margin-top: 32px; padding: 24px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px;">
-          <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #b45309;">A Special Offer Just For You</h3>
-          <p style="margin: 0 0 16px 0; font-size: 14px; color: #92400e; line-height: 1.5;">Hello there, this is Joe, Head of Galal Academy Support team. We are doing something very special for you today!</p>
-          <p style="margin: 0 0 16px 0; font-size: 14px; color: #92400e; line-height: 1.5;">Since you reached the Gold tier, we want to highlight why upgrading to Elite membership is absolutely worth it. If you upgrade to Elite, we will give you a <strong>25% "cashback"</strong> in the form of an extra week of Elite membership access to documents entirely for free... specifically, you'll get it when you eventually cancel your membership.</p>
-          <p style="margin: 0 0 16px 0; font-size: 14px; color: #92400e; line-height: 1.5;">Your own personal coupon code is: <strong>${promo_code}</strong></p>
-          <p style="margin: 0 0 16px 0; font-size: 14px; color: #92400e; line-height: 1.5;">This coupon code is incredibly special and can only be used once. Please don't share it with anyone else! This code will be valid for exactly <strong>14 days</strong> from receiving this email. To use it, simply upgrade to the Elite tier on YouTube, then resubmit your membership request in our form and enter this code.</p>
-          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #92400e;">— Joe, Head of Support</p>
+          <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #b45309;">⚡ Private Elite Upgrade — 14 Days Only</h3>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #92400e; line-height: 1.6;">You've reached Gold — and that unlocks something most members never see.</p>
+          <p style="margin: 0 0 16px 0; font-size: 15px; color: #92400e; line-height: 1.6;">For the next 14 days, you can upgrade to Elite with a private benefit:</p>
+          <p style="margin: 0 0 24px 0; font-size: 15px; color: #92400e; line-height: 1.6;">👉 <strong>Get 1 FULL week of Elite access completely FREE</strong><br><span style="font-size: 13px; opacity: 0.8;">(automatically applied when you cancel later)</span></p>
+          
+          <div style="background-color: #fef08a; padding: 16px; border-radius: 6px; margin-bottom: 24px; text-align: center; border: 1px dashed #ca8a04;">
+            <p style="margin: 0 0 8px 0; font-size: 13px; color: #854d0e; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Your Personal Code:</p>
+            <p style="margin: 0; font-size: 24px; font-weight: 700; color: #713f12; letter-spacing: 2px;">${promo_code}</p>
+          </div>
+
+          <ul style="margin: 0 0 24px 0; padding-left: 20px; font-size: 14px; color: #92400e; line-height: 1.6;">
+            <li style="margin-bottom: 8px;">Valid for 14 days only</li>
+            <li style="margin-bottom: 8px;">Can be used once</li>
+            <li style="margin-bottom: 0;">Private to your account</li>
+          </ul>
+
+          <p style="margin: 0 0 24px 0; font-size: 15px; color: #92400e; line-height: 1.6; font-weight: 600;">👉 Upgrade now, then enter your code in the form to activate your bonus.</p>
+          
+          <a href="https://www.youtube.com/" style="display: inline-block; background-color: #b45309; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px; margin-bottom: 16px; text-align: center;">Upgrade to Elite</a>
+          
+          <p style="margin: 0; font-size: 13px; font-weight: 600; color: #b45309;">⏳ After 14 days, this offer disappears.</p>
         </div>
       ` : ''
 

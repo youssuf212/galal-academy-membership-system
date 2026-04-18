@@ -45,28 +45,45 @@ export default function Embed() {
         .ilike('name', formData.youtubeName)
         .single();
 
+      // 2. Helper to deduplicate: Check if a verification request already exists and update it, else insert.
+      const saveVerification = async (payload: any) => {
+        const { data: existing } = await supabase
+          .from('verifications')
+          .select('id')
+          .ilike('youtube_handle', payload.youtube_handle)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (existing && existing.length > 0) {
+          const { error } = await supabase.from('verifications').update(payload).eq('id', existing[0].id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('verifications').insert([payload]);
+          if (error && error.code === '23505') throw new Error("A request for this YouTube Name already exists.");
+          if (error) throw error;
+        }
+      };
+
       if (member) {
         // MATCH FOUND — check how old the Last update timestamp is
         const daysSinceUpdate = Math.floor(
           (Date.now() - new Date(member.joined_at).getTime()) / (1000 * 3600 * 24)
         );
 
-        if (daysSinceUpdate <= 31) {
+        const isUpgradingToElite = formData.promoCode && !member.tier.toLowerCase().includes('elite');
+
+        if (daysSinceUpdate <= 31 && !isUpgradingToElite) {
           // FRESH MEMBERSHIP (0–31 days) — verify immediately
-          const { error: verificationError } = await supabase
-            .from('verifications')
-            .insert([{
-              member_id: member.id,
-              email: formData.email,
-              youtube_handle: formData.youtubeName,
-              promo_code: formData.promoCode || null,
-              status: 'verified',
-              verified_at: new Date().toISOString()
-            }]);
+          await saveVerification({
+            member_id: member.id,
+            email: formData.email,
+            youtube_handle: formData.youtubeName,
+            promo_code: formData.promoCode || null,
+            status: 'verified',
+            verified_at: new Date().toISOString()
+          });
           
-          if (verificationError && verificationError.code === '23505') {
-              throw new Error("This YouTube Name has already been verified.");
-          }
+
           
           setMemberTier(member.tier);
           setStatus('success_verified');
@@ -109,23 +126,16 @@ export default function Embed() {
             }
           }).catch(console.error);
         } else {
-          // EXPIRED MEMBERSHIP (>31 days) — put them in pending queue
-          // When a new CSV is uploaded, their name will be re-checked:
-          //   - If still >31 days → expired email
-          //   - If now ≤31 days  → welcome email + access
-          const { error: verificationError } = await supabase
-            .from('verifications')
-            .insert([{
-              member_id: member.id,
-              email: formData.email,
-              youtube_handle: formData.youtubeName,
-              promo_code: formData.promoCode || null,
-              status: 'pending'
-            }]);
+          // EXPIRED MEMBERSHIP (>31 days) OR Early Elite Upgrade
+          await saveVerification({
+            member_id: member.id,
+            email: formData.email,
+            youtube_handle: formData.youtubeName,
+            promo_code: formData.promoCode || null,
+            status: 'pending'
+          });
           
-          if (verificationError && verificationError.code === '23505') {
-              throw new Error("A request for this YouTube Name is already pending.");
-          }
+
           
           setStatus('success_pending');
 
@@ -136,21 +146,14 @@ export default function Embed() {
         }
       } else {
         // NO MATCH FOUND AT ALL — Insert as Pending
-        // When a new CSV is uploaded:
-        //   - If name appears → give access + welcome email
-        //   - If name still missing → rejection email
-        const { error: verificationError } = await supabase
-          .from('verifications')
-          .insert([{
-            email: formData.email,
-            youtube_handle: formData.youtubeName,
-            promo_code: formData.promoCode || null,
-            status: 'pending'
-          }]);
+        await saveVerification({
+          email: formData.email,
+          youtube_handle: formData.youtubeName,
+          promo_code: formData.promoCode || null,
+          status: 'pending'
+        });
         
-        if (verificationError && verificationError.code === '23505') {
-            throw new Error("A request for this YouTube Name is already pending.");
-        }
+
         
         setStatus('success_pending');
 

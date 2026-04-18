@@ -311,11 +311,6 @@ serve(async (req) => {
         <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">${expiredMessage}</p>
         
         <p style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 32px;">We're always striving to improve, and we'd love to hear your feedback on why you decided not to renew.</p>
-
-        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
-          <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #166534;">Exclusive Comeback Offer</h3>
-          <p style="margin: 0 0 16px 0; font-size: 14px; color: #15803d; line-height: 1.5;">We'd love to have you back! If you decide to rejoin us today at the <strong>${nextTier}</strong> tier, please respond to this email for a special <strong>10% Discount</strong> on your upgraded membership!</p>
-        </div>
       `)
     } else if (type === 'custom') {
       subject = customSubject || 'Message from Galal Academy'
